@@ -242,12 +242,15 @@ bash_array_to_json() {
 RKEY=""
 
 read_key() {
-  local ch esc rest
+  local ch rest
+  tty_save
   IFS= read -rsn1 ch
   if [[ "$ch" == $'\x1b' ]]; then
     IFS= read -rsn2 -t 0.1 rest || true
+    tty_restore
     RKEY="ESC${rest}"
   else
+    tty_restore
     RKEY="$ch"
   fi
 }
@@ -263,8 +266,15 @@ classify_key() {
   esac
 }
 
-cursor_up()  { [[ $1 -gt 0 ]] && printf "\033[%sA" "$1"; }
+cursor_up()  { [[ ${1:-0} -gt 0 ]] && printf "\033[%sA" "$1"; }
 clear_down() { printf "\033[0J"; }
+
+# ─── TTY save / restore ───────────────────────────────────────────────────────
+# read -rsn1 puts the terminal into raw / no-echo mode.  Always restore on exit.
+_TTY_SAVED=""
+tty_save()    { _TTY_SAVED="$(stty -g 2>/dev/null || true)"; }
+tty_restore() { [[ -n "$_TTY_SAVED" ]] && stty "$_TTY_SAVED" 2>/dev/null || true; }
+trap 'tty_restore' EXIT INT TERM
 
 arrow_select() {
   local prompt="$1"
@@ -782,7 +792,14 @@ delegate_to_node() {
     node "${REPO_ROOT}/tools/init.js" "${node_flags[@]}" || true
   else
     local init_tmp="${TMP_DIR}/init.js"
-    curl -fsSL "${GH_RAW}/tools/init.js" -o "$init_tmp"
+    printf "  $(c_gray "  Downloading init.js …")"
+    if curl -fsSL "${GH_RAW}/tools/init.js" -o "$init_tmp" 2>/dev/null; then
+      printf " $(c_green "done")\n"
+    else
+      printf " $(c_red "failed — skipping adapter step")\n"
+      return
+    fi
+    printf "  $(c_gray "  Running adapter + validator …")\n"
     node "$init_tmp" "${node_flags[@]}" || true
   fi
 }
