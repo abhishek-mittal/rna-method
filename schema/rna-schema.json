@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rna-pluribus-schema-v1",
+  "title": "RNA + Pluribus Agent Collective Schema",
+  "description": "Platform-neutral schema for defining multi-agent orchestration with Reusable Neural Activators (RNA). This schema is the canonical format; per-platform adapters generate native configuration files.",
+  "version": "1.0.0",
+  "meta": {
+    "director": "Director",
+    "projectName": "my-project",
+    "generatedAt": "2026-03-08"
+  },
+  "agents": [
+    {
+      "id": "director",
+      "name": "Director",
+      "role": "Director / Orchestrator",
+      "persona": "Strategic, decisive, connects dots across the entire system",
+      "command": "/director",
+      "model": "high-reasoning",
+      "triggerEvents": ["entry-created", "entry-updated"],
+      "matchCategories": ["sprint", "blocker", "decision", "delegation"],
+      "matchPriorities": ["critical", "high"],
+      "capabilities": ["orchestrate", "route", "join", "team-intelligence"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Director of the Pluribus Agent Collective. You orchestrate specialist agents, route tasks via signal matching, manage team intelligence, and initiate multi-agent joins."
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Full-Stack Developer",
+      "persona": "Focused, productive, pattern-aware implementer",
+      "command": "/dev",
+      "model": "balanced",
+      "triggerEvents": ["entry-created"],
+      "matchCategories": ["sprint", "blocker"],
+      "matchPriorities": ["critical", "high", "medium"],
+      "capabilities": ["implement", "code-generation", "api", "frontend"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Developer agent. Build features, APIs, and frontend components following the project development standards."
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer / Security Analyst",
+      "persona": "Meticulous, security-conscious, quality-focused",
+      "command": "/review",
+      "model": "balanced",
+      "triggerEvents": ["entry-updated"],
+      "matchCategories": ["dod", "sprint"],
+      "matchPriorities": ["critical", "high"],
+      "capabilities": ["code-review", "pr-creation", "security-review"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Reviewer agent. Review PRs covering security, logic, breaking changes, quality, performance, and test coverage."
+    },
+    {
+      "id": "architect",
+      "name": "Architect",
+      "role": "System Architect",
+      "persona": "Strategic thinker, evaluates trade-offs, designs for scale",
+      "command": "/architect",
+      "model": "high-reasoning",
+      "triggerEvents": ["entry-created"],
+      "matchCategories": ["sprint"],
+      "matchPriorities": ["critical", "high"],
+      "capabilities": ["api-design", "db-schema", "architecture", "optimization"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Architect agent. Design API contracts, database schemas, evaluate optimization strategies, and plan system evolution."
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "role": "Explorer / Researcher",
+      "persona": "Curious, thorough researcher with web and codebase reach",
+      "command": "/scout",
+      "model": "fast",
+      "triggerEvents": [],
+      "matchCategories": [],
+      "matchPriorities": [],
+      "capabilities": ["explore", "web-research", "api-docs", "library-comparison"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Researcher agent. Explore codebases, research best practices, find API documentation, and compare libraries."
+    },
+    {
+      "id": "ops",
+      "name": "Ops",
+      "role": "Operator / Automation Specialist",
+      "persona": "Efficient, process-oriented, daily rhythm keeper",
+      "command": "/ops",
+      "model": "fast",
+      "triggerEvents": ["entry-created"],
+      "matchCategories": ["weekly", "async"],
+      "matchPriorities": [],
+      "capabilities": ["daily-ops", "status-reports", "automation"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Ops agent. Run daily ops workflows, generate status reports, and handle routine automation tasks."
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "description": "Core coding guidelines: simplicity, readability, minimal changes, anti-patterns",
+      "ownedBy": null,
+      "content": "Write simple, readable code. Use early returns. Minimal diffs — change only what the task requires. DRY principle. Prefix event handlers with 'handle'. Document public functions with JSDoc."
+    },
+    {
+      "id": "context-router",
+      "name": "Context Router",
+      "alwaysApply": true,
+      "description": "Always-on intent router matching prompts to rules, skills, and agents",
+      "ownedBy": "director",
+      "content": "Before responding, check if the request matches an existing rule, skill, or agent. Suggest the match to the user. Never mention the router when no match is found."
+    },
+    {
+      "id": "testing-standards",
+      "name": "Testing Standards",
+      "alwaysApply": false,
+      "description": "Test creation standards for the project test framework",
+      "ownedBy": "reviewer",
+      "triggerKeywords": ["test", "spec", "coverage", "unit test", "integration test"]
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "description": "Security checklist: no hardcoded secrets, input validation, injection prevention",
+      "ownedBy": "reviewer",
+      "triggerKeywords": ["security", "auth", "credential", "secret", "vulnerability", "injection"]
+    },
+    {
+      "id": "optimization-workflow",
+      "name": "Optimization Workflow",
+      "alwaysApply": false,
+      "description": "Systematic 6-phase code optimization: measure first, no premature optimization",
+      "ownedBy": "architect",
+      "triggerKeywords": ["optimize", "performance", "benchmark", "slow", "latency"]
+    },
+    {
+      "id": "pr-description",
+      "name": "PR Description",
+      "alwaysApply": false,
+      "description": "Generate GitHub PR descriptions with What changed / Why / Testing evidence sections",
+      "ownedBy": "reviewer",
+      "triggerKeywords": ["PR", "pull request", "merge", "pr description"]
+    },
+    {
+      "id": "docs-standards",
+      "name": "Documentation Standards",
+      "alwaysApply": false,
+      "description": "Documentation standards: structure, epistemic labels, source requirements",
+      "ownedBy": null,
+      "triggerKeywords": ["document", "docs", "readme", "write up", "spec"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "smart-dev-agent",
+      "name": "Smart Dev Agent",
+      "description": "Context-aware lead developer with phased workflow: context load from timeline.json, ticket triage, model selection, implementation, then hub update",
+      "ownedBy": "developer",
+      "triggerKeywords": ["implement", "build", "fix", "debug", "optimize", "refactor"],
+      "subFiles": ["context-loader.md", "model-selection.md"]
+    },
+    {
+      "id": "git-review-agent",
+      "name": "Git Review Agent",
+      "description": "6-category code review covering security, logic, breaking changes, quality, performance, and test coverage — with a go/no-go verdict",
+      "ownedBy": "reviewer",
+      "triggerKeywords": ["review PR", "review code", "create PR", "commit", "security review"],
+      "subFiles": ["review-checklist.md", "review-template.md"]
+    },
+    {
+      "id": "research-agent",
+      "name": "Research Agent",
+      "description": "Structured research workflow: define question, find primary sources, synthesize, rate confidence, record in timeline.json",
+      "ownedBy": "researcher",
+      "triggerKeywords": ["research", "investigate", "find out", "compare libraries", "best practice"],
+      "subFiles": ["research-template.md"]
+    }
+  ],
+  "commands": [
+    { "id": "dev", "agentId": "developer", "description": "Invoke Developer agent" },
+    { "id": "review", "agentId": "reviewer", "description": "Invoke Reviewer agent" },
+    { "id": "architect", "agentId": "architect", "description": "Invoke Architect agent" },
+    { "id": "scout", "agentId": "researcher", "description": "Invoke Researcher agent" },
+    { "id": "ops", "agentId": "ops", "description": "Invoke Ops agent" },
+    { "id": "director", "agentId": "director", "description": "Invoke Director agent" },
+    { "id": "join", "agentId": "director", "description": "Initiate a multi-agent join" },
+    { "id": "update-timeline", "agentId": "director", "description": "Update timeline.json hub" }
+  ],
+  "hooks": [
+    {
+      "id": "post-commit-review",
+      "event": "post-commit",
+      "description": "Auto-trigger code review signal after git commit",
+      "activates": ["reviewer"],
+      "directorApproval": true,
+      "enabled": false
+    },
+    {
+      "id": "pre-push-qa",
+      "event": "pre-push",
+      "description": "Auto-trigger a quick check signal before git push",
+      "activates": ["reviewer"],
+      "directorApproval": true,
+      "enabled": false
+    },
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Auto-validate registry when RNA files change",
+      "activates": ["validate-registry"],
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "routes": [
+    {
+      "id": "route-critical-blocker",
+      "when": { "event": "entry-created", "category": "blocker", "priority": "critical" },
+      "activate": ["director"],
+      "directorApproval": false
+    },
+    {
+      "id": "route-sprint-task",
+      "when": { "event": "entry-created", "category": "sprint", "priority": ["critical", "high"] },
+      "activate": ["developer"],
+      "directorApproval": true
+    },
+    {
+      "id": "route-dod-complete",
+      "when": { "event": "entry-updated", "category": "dod" },
+      "activate": ["reviewer"],
+      "directorApproval": true
+    }
+  ],
+  "director": {
+    "agentId": "director",
+    "overrides": {
+      "alwaysNotify": ["blocker", "critical"],
+      "autoApproveFor": ["ops", "researcher"],
+      "requireApproval": ["developer", "architect", "reviewer"]
+    }
+  },
+  "joiningPatterns": [
+    { "id": "build-review", "agents": ["developer", "reviewer"], "flow": "sequential" },
+    { "id": "design-build", "agents": ["architect", "developer"], "flow": "sequential" },
+    { "id": "research-build", "agents": ["researcher", "developer"], "flow": "pipeline" },
+    { "id": "full-pipeline", "agents": ["architect", "developer", "reviewer"], "flow": "pipeline" }
+  ]
+}

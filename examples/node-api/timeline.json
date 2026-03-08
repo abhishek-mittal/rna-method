@@ -1,0 +1,33 @@
+{
+  "projectName": "my-node-api",
+  "lastUpdated": "2026-01-01",
+  "agents": [
+    {
+      "id": "developer",
+      "name": "Developer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Replace with: last task completed",
+      "currentFocus": "Replace with: current focus area"
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Replace with: last PR reviewed",
+      "currentFocus": "Replace with: current focus area"
+    }
+  ],
+  "projectState": {
+    "techStack": ["Node.js 20", "Express", "TypeScript", "PostgreSQL"],
+    "activeAreas": ["Replace with: active feature areas"],
+    "knownDecisions": [
+      "All routes validate input with Zod",
+      "Error responses use { error: string } shape with appropriate HTTP status codes"
+    ],
+    "openQuestions": [
+      "Replace with: open architecture questions"
+    ]
+  },
+  "signalQueue": [],
+  "completedJoins": []
+}

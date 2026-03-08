@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "projectName": "my-nextjs-app",
+    "platform": "copilot",
+    "schemaVersion": "1.0.0",
+    "lastUpdated": "2026-01-01",
+    "director": "Director"
+  },
+  "agents": [
+    {
+      "id": "director",
+      "name": "Director",
+      "role": "Director / Orchestrator",
+      "modelTier": "high-reasoning",
+      "file": ".github/agents/director.agent.md",
+      "matchCategories": ["sprint", "blocker", "decision"],
+      "matchKeywords": ["orchestrate", "coordinate", "director", "plan"],
+      "autoApprove": false,
+      "requiresDirectorApproval": false
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Next.js Full-Stack Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "feature", "bug", "create", "route", "component", "api"],
+      "autoApprove": true,
+      "contextFiles": [
+        "app/layout.tsx",
+        "next.config.mjs",
+        "tailwind.config.ts"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer",
+      "modelTier": "balanced",
+      "file": ".github/agents/reviewer.agent.md",
+      "matchCategories": ["dod", "sprint"],
+      "matchKeywords": ["review", "PR", "pull request", "security", "audit"],
+      "autoApprove": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Development Standards"
+    },
+    {
+      "id": "nextjs-conventions",
+      "name": "Next.js Conventions",
+      "alwaysApply": true,
+      "file": ".github/instructions/nextjs-conventions.instructions.md"
+    },
+    {
+      "id": "testing-standards",
+      "name": "Testing Standards",
+      "alwaysApply": false,
+      "file": ".github/instructions/testing-standards.instructions.md",
+      "triggerKeywords": ["test", "spec", "coverage"]
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "file": ".github/instructions/security-gate.instructions.md",
+      "triggerKeywords": ["security", "auth", "credential", "PR", "review"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "nextjs-app-router",
+      "name": "Next.js App Router Expert",
+      "file": ".github/skills/nextjs-app-router/SKILL.md",
+      "canonicalFile": "skills/nextjs-app-router/SKILL.md",
+      "ownedBy": "developer",
+      "triggerKeywords": ["app router", "server component", "client component", "route handler"]
+    }
+  ],
+  "hooks": [
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    },
+    {
+      "id": "pre-push-review",
+      "event": "pre-push",
+      "description": "Run code review before git push",
+      "activates": "reviewer",
+      "type": "instruction",
+      "directorApproval": false,
+      "enabled": false
+    }
+  ],
+  "joiningPatterns": [
+    {
+      "id": "build-review",
+      "file": "templates/joins/design-to-build.md",
+      "agents": ["developer", "reviewer"],
+      "flow": "pipeline"
+    }
+  ]
+}

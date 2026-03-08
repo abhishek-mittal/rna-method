@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "project": "my-project",
+    "lastUpdated": "YYYY-MM-DD",
+    "currentPhase": "Initial setup",
+    "projectDescription": "Brief description of what this project does."
+  },
+  "teamProfiles": [
+    {
+      "agentId": "developer",
+      "name": "Developer",
+      "role": "Full-Stack Developer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Project initialization"
+    },
+    {
+      "agentId": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer / Security Analyst",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Initial security review"
+    },
+    {
+      "agentId": "architect",
+      "name": "Architect",
+      "role": "System Architect",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Tech stack selection"
+    },
+    {
+      "agentId": "researcher",
+      "name": "Researcher",
+      "role": "Explorer / Researcher",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Initial library research"
+    },
+    {
+      "agentId": "ops",
+      "name": "Ops",
+      "role": "Operator / Automation Specialist",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Automation setup"
+    }
+  ],
+  "projectState": {
+    "techStack": {
+      "language": "TypeScript",
+      "framework": "Replace with your framework",
+      "database": "Replace with your database",
+      "hosting": "Replace with your hosting"
+    },
+    "activeAreas": [
+      "Replace with current focus area"
+    ],
+    "knownDecisions": [
+      "Replace with your first architectural decision",
+      "Replace with your second architectural decision"
+    ],
+    "openQuestions": [
+      "Replace with the first open technical question",
+      "Replace with the first open product question"
+    ]
+  },
+  "signalQueue": [],
+  "completedJoins": []
+}

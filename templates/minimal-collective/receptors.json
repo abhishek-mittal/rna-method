@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "project": "my-project",
+    "platform": "Replace with: cursor | copilot | claude-code | codex | kimi",
+    "generatedAt": "YYYY-MM-DD",
+    "version": "1.0.0"
+  },
+  "agents": [
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Full-Stack Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "feature", "bug", "create"],
+      "autoApprove": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Development Standards"
+    }
+  ],
+  "skills": [],
+  "hooks": [
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "routes": [],
+  "director": null,
+  "joiningPatterns": []
+}

@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "project": "my-node-api",
+    "platform": "copilot",
+    "generatedAt": "2026-01-01",
+    "version": "1.0.0"
+  },
+  "agents": [
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Node.js API Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "endpoint", "route", "handler"],
+      "autoApprove": true
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer / Security Analyst",
+      "modelTier": "balanced",
+      "file": ".github/agents/reviewer.agent.md",
+      "matchCategories": ["dod"],
+      "matchKeywords": ["review", "PR", "security"],
+      "autoApprove": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md"
+    },
+    {
+      "id": "api-conventions",
+      "name": "API Conventions",
+      "alwaysApply": true,
+      "file": ".github/instructions/api-conventions.instructions.md"
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "file": ".github/instructions/security-gate.instructions.md",
+      "triggerKeywords": ["security", "auth", "PR"]
+    }
+  ],
+  "skills": [],
+  "hooks": [
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "routes": [
+    {
+      "id": "route-sprint",
+      "when": { "category": "sprint" },
+      "activate": ["developer"],
+      "directorApproval": false
+    }
+  ],
+  "joiningPatterns": [
+    {
+      "id": "build-review",
+      "file": "templates/joins/design-to-build.md",
+      "agents": ["developer", "reviewer"],
+      "flow": "pipeline"
+    }
+  ]
+}

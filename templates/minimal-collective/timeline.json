@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "project": "my-project",
+    "lastUpdated": "YYYY-MM-DD",
+    "currentPhase": "Initial setup",
+    "projectDescription": "Brief description of what this project does."
+  },
+  "teamProfiles": [
+    {
+      "agentId": "developer",
+      "name": "Developer",
+      "role": "Full-Stack Developer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Project initialization"
+    }
+  ],
+  "projectState": {
+    "techStack": {
+      "language": "TypeScript",
+      "framework": "Replace with your framework",
+      "database": "Replace with your database",
+      "hosting": "Replace with your hosting"
+    },
+    "activeAreas": [
+      "Replace with current focus area"
+    ],
+    "knownDecisions": [
+      "Replace with your first architectural decision"
+    ],
+    "openQuestions": [
+      "Replace with the first open question you need answered"
+    ]
+  },
+  "signalQueue": [],
+  "completedJoins": []
+}

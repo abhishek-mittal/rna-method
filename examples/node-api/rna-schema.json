@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "projectName": "my-node-api",
+    "platform": "copilot",
+    "schemaVersion": "1.0.0",
+    "lastUpdated": "2026-01-01",
+    "director": "Director"
+  },
+  "agents": [
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Node.js API Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "endpoint", "route", "middleware", "api", "handler"],
+      "autoApprove": true,
+      "contextFiles": [
+        "src/routes/index.js",
+        "src/middleware/index.js",
+        "package.json"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer / Security Analyst",
+      "modelTier": "balanced",
+      "file": ".github/agents/reviewer.agent.md",
+      "matchCategories": ["dod", "sprint"],
+      "matchKeywords": ["review", "PR", "pull request", "security", "audit"],
+      "autoApprove": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Development Standards"
+    },
+    {
+      "id": "api-conventions",
+      "name": "API Conventions",
+      "alwaysApply": true,
+      "file": ".github/instructions/api-conventions.instructions.md"
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "file": ".github/instructions/security-gate.instructions.md",
+      "triggerKeywords": ["security", "auth", "secret", "credential", "PR", "review"]
+    },
+    {
+      "id": "testing-standards",
+      "name": "Testing Standards",
+      "alwaysApply": false,
+      "file": ".github/instructions/testing-standards.instructions.md",
+      "triggerKeywords": ["test", "spec", "coverage", "unit test"]
+    }
+  ],
+  "skills": [],
+  "hooks": [
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "joiningPatterns": [
+    {
+      "id": "build-review",
+      "file": "templates/joins/design-to-build.md",
+      "agents": ["developer", "reviewer"],
+      "flow": "pipeline"
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "project": "my-project",
+    "platform": "Replace with: cursor | copilot | claude-code | codex | kimi",
+    "generatedAt": "YYYY-MM-DD",
+    "version": "1.0.0"
+  },
+  "agents": [
+    {
+      "id": "director",
+      "name": "Director",
+      "role": "Director / Orchestrator",
+      "modelTier": "high-reasoning",
+      "file": ".github/agents/director.agent.md",
+      "matchCategories": ["sprint", "blocker", "decision"],
+      "matchKeywords": ["orchestrate", "coordinate", "director", "join", "pipeline"],
+      "autoApprove": false,
+      "requiresDirectorApproval": false
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Full-Stack Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "feature", "bug", "create", "refactor"],
+      "autoApprove": true
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer / Security Analyst",
+      "modelTier": "balanced",
+      "file": ".github/agents/reviewer.agent.md",
+      "matchCategories": ["dod", "sprint"],
+      "matchKeywords": ["review", "PR", "pull request", "security", "audit", "check"],
+      "autoApprove": false,
+      "requiresDirectorApproval": false
+    },
+    {
+      "id": "architect",
+      "name": "Architect",
+      "role": "System Architect",
+      "modelTier": "high-reasoning",
+      "file": ".github/agents/architect.agent.md",
+      "matchCategories": ["sprint"],
+      "matchKeywords": ["design", "architecture", "schema", "api design", "optimize", "scale"],
+      "autoApprove": false,
+      "requiresDirectorApproval": false
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "role": "Explorer / Researcher",
+      "modelTier": "fast",
+      "file": ".github/agents/researcher.agent.md",
+      "matchCategories": [],
+      "matchKeywords": ["research", "investigate", "compare", "find", "explore", "best practice"],
+      "autoApprove": true
+    },
+    {
+      "id": "ops",
+      "name": "Ops",
+      "role": "Operator / Automation Specialist",
+      "modelTier": "fast",
+      "file": ".github/agents/ops.agent.md",
+      "matchCategories": ["weekly", "async"],
+      "matchKeywords": ["ops", "automation", "status", "report", "daily", "deploy"],
+      "autoApprove": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Development Standards"
+    },
+    {
+      "id": "context-router",
+      "name": "Context Router",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Context Router"
+    },
+    {
+      "id": "testing-standards",
+      "name": "Testing Standards",
+      "alwaysApply": false,
+      "file": ".github/instructions/testing-standards.instructions.md",
+      "triggerKeywords": ["test", "spec", "coverage", "unit test"]
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "file": ".github/instructions/security-gate.instructions.md",
+      "triggerKeywords": ["security", "auth", "credential", "secret", "vulnerability"]
+    },
+    {
+      "id": "optimization-workflow",
+      "name": "Optimization Workflow",
+      "alwaysApply": false,
+      "file": ".github/instructions/optimization-workflow.instructions.md",
+      "triggerKeywords": ["optimize", "performance", "benchmark"]
+    },
+    {
+      "id": "pr-description",
+      "name": "PR Description",
+      "alwaysApply": false,
+      "file": ".github/instructions/pr-description.instructions.md",
+      "triggerKeywords": ["PR", "pull request", "merge"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "smart-dev-agent",
+      "name": "Smart Dev Agent",
+      "file": ".github/skills/smart-dev-agent/SKILL.md",
+      "canonicalFile": "skills/shuhari/smart-dev-agent/SKILL.md",
+      "ownedBy": "developer",
+      "triggerKeywords": ["implement", "build", "fix", "debug"]
+    },
+    {
+      "id": "git-review-agent",
+      "name": "Git Review Agent",
+      "file": ".github/skills/git-review-agent/SKILL.md",
+      "canonicalFile": "skills/shuhari/git-review-agent/SKILL.md",
+      "ownedBy": "reviewer",
+      "triggerKeywords": ["review PR", "review code", "create PR"]
+    }
+  ],
+  "hooks": [
+    {
+      "id": "post-commit-review",
+      "event": "post-commit",
+      "description": "Signal code review after git commit",
+      "activates": "reviewer",
+      "type": "instruction",
+      "directorApproval": false,
+      "enabled": false
+    },
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "routes": [
+    {
+      "id": "route-critical-blocker",
+      "when": { "category": "blocker", "priority": "critical" },
+      "activate": ["director"],
+      "directorApproval": false
+    },
+    {
+      "id": "route-sprint-task",
+      "when": { "category": "sprint", "priority": "high" },
+      "activate": ["developer"],
+      "directorApproval": false
+    },
+    {
+      "id": "route-dod-check",
+      "when": { "category": "dod" },
+      "activate": ["reviewer"],
+      "directorApproval": false
+    }
+  ],
+  "director": {
+    "agentId": "director",
+    "autoApproveFor": ["researcher", "ops"],
+    "requireApproval": ["developer", "architect", "reviewer"],
+    "alwaysNotify": ["blocker", "critical"]
+  },
+  "joiningPatterns": [
+    {
+      "id": "build-review",
+      "file": "templates/joins/design-to-build.md",
+      "agents": ["developer", "reviewer"],
+      "flow": "sequential"
+    },
+    {
+      "id": "research-build",
+      "file": "templates/joins/research-to-content.md",
+      "agents": ["researcher", "developer"],
+      "flow": "pipeline"
+    },
+    {
+      "id": "full-pipeline",
+      "file": "templates/joins/full-pipeline.md",
+      "agents": ["architect", "developer", "reviewer"],
+      "flow": "pipeline"
+    }
+  ]
+}

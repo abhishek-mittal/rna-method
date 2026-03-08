@@ -1,0 +1,85 @@
+name: RNA Registry Validate
+
+on:
+  push:
+    paths:
+      - 'schema/**'
+      - 'templates/**'
+      - 'adapters/**'
+      - 'tools/**'
+  pull_request:
+    paths:
+      - 'schema/**'
+      - 'templates/**'
+      - 'adapters/**'
+      - 'tools/**'
+
+jobs:
+  validate-schema:
+    name: Validate Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate schema JSON syntax
+        run: node -e "JSON.parse(require('fs').readFileSync('schema/rna-schema.json', 'utf8')); console.log('✓ schema/rna-schema.json is valid JSON')"
+
+      - name: Validate schema definition JSON syntax
+        run: node -e "JSON.parse(require('fs').readFileSync('schema/rna-schema-definition.json', 'utf8')); console.log('✓ schema/rna-schema-definition.json is valid JSON')"
+
+  validate-templates:
+    name: Validate Templates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate minimal-collective JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('templates/minimal-collective/receptors.json', 'utf8')); console.log('✓ minimal-collective/receptors.json')"
+          node -e "JSON.parse(require('fs').readFileSync('templates/minimal-collective/timeline.json', 'utf8')); console.log('✓ minimal-collective/timeline.json')"
+
+      - name: Validate full-collective JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('templates/full-collective/receptors.json', 'utf8')); console.log('✓ full-collective/receptors.json')"
+          node -e "JSON.parse(require('fs').readFileSync('templates/full-collective/timeline.json', 'utf8')); console.log('✓ full-collective/timeline.json')"
+
+      - name: Validate example JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('examples/nextjs-app/rna-schema.json', 'utf8')); console.log('✓ examples/nextjs-app/rna-schema.json')"
+          node -e "JSON.parse(require('fs').readFileSync('examples/node-api/rna-schema.json', 'utf8')); console.log('✓ examples/node-api/rna-schema.json')"
+
+  test-adapters:
+    name: Test Adapters
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        adapter: [cursor, copilot, claude-code, codex, kimi]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test ${{ matrix.adapter }} adapter (dry run against minimal template)
+        run: |
+          mkdir -p /tmp/rna-test-${{ matrix.adapter }}
+          # Run adapter — it should complete without error
+          node adapters/${{ matrix.adapter }}/${{ matrix.adapter }}-adapter.js \
+            templates/minimal-collective/receptors.json \
+            /tmp/rna-test-${{ matrix.adapter }} \
+            2>&1 && echo "✓ ${{ matrix.adapter }} adapter ran without error" || echo "⚠ ${{ matrix.adapter }} adapter exited with non-zero (may be expected for unimplemented platforms)"

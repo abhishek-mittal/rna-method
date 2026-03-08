@@ -1,0 +1,40 @@
+{
+  "projectName": "my-nextjs-app",
+  "lastUpdated": "2026-01-01",
+  "agents": [
+    {
+      "id": "director",
+      "name": "Director",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Replace with: last task completed",
+      "currentFocus": "Replace with: current focus area"
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Replace with: last task completed",
+      "currentFocus": "Replace with: current focus area"
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "lastActive": "YYYY-MM-DD",
+      "lastTask": "Replace with: last PR reviewed",
+      "currentFocus": "Replace with: current focus area"
+    }
+  ],
+  "projectState": {
+    "techStack": ["Next.js 15", "TypeScript", "Tailwind CSS", "Vercel"],
+    "activeAreas": ["Replace with: active feature areas"],
+    "knownDecisions": [
+      "Use App Router for all routes",
+      "Server Components by default; add 'use client' only for browser APIs"
+    ],
+    "openQuestions": [
+      "Replace with: open architecture questions"
+    ]
+  },
+  "signalQueue": [],
+  "completedJoins": []
+}

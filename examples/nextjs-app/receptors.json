@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "project": "my-nextjs-app",
+    "platform": "copilot",
+    "generatedAt": "2026-01-01",
+    "version": "1.0.0"
+  },
+  "agents": [
+    {
+      "id": "director",
+      "name": "Director",
+      "role": "Director / Orchestrator",
+      "modelTier": "high-reasoning",
+      "file": ".github/agents/director.agent.md",
+      "matchCategories": ["sprint", "blocker", "decision"],
+      "matchKeywords": ["orchestrate", "coordinate", "plan"],
+      "autoApprove": false
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "role": "Next.js Full-Stack Developer",
+      "modelTier": "balanced",
+      "file": ".github/agents/developer.agent.md",
+      "matchCategories": ["sprint", "blocker"],
+      "matchKeywords": ["build", "implement", "fix", "feature", "route", "component"],
+      "autoApprove": true
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "role": "Code Reviewer",
+      "modelTier": "balanced",
+      "file": ".github/agents/reviewer.agent.md",
+      "matchCategories": ["dod"],
+      "matchKeywords": ["review", "PR", "security"],
+      "autoApprove": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "development-standards",
+      "name": "Development Standards",
+      "alwaysApply": true,
+      "file": ".github/copilot-instructions.md",
+      "section": "Development Standards"
+    },
+    {
+      "id": "nextjs-conventions",
+      "name": "Next.js Conventions",
+      "alwaysApply": true,
+      "file": ".github/instructions/nextjs-conventions.instructions.md"
+    },
+    {
+      "id": "security-gate",
+      "name": "Security Gate",
+      "alwaysApply": false,
+      "file": ".github/instructions/security-gate.instructions.md",
+      "triggerKeywords": ["security", "auth", "PR"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "nextjs-app-router",
+      "name": "Next.js App Router Expert",
+      "file": ".github/skills/nextjs-app-router/SKILL.md",
+      "canonicalFile": "skills/nextjs-app-router/SKILL.md",
+      "ownedBy": "developer",
+      "triggerKeywords": ["app router", "server component", "route handler"]
+    }
+  ],
+  "hooks": [
+    {
+      "id": "rna-updated-validate",
+      "event": "rna-updated",
+      "description": "Validate registry when RNA files change",
+      "activates": "validate-registry",
+      "type": "script",
+      "scriptPath": "tools/validate-registry.js",
+      "directorApproval": false,
+      "enabled": true
+    }
+  ],
+  "routes": [
+    {
+      "id": "route-sprint",
+      "when": { "category": "sprint", "priority": "high" },
+      "activate": ["developer"],
+      "directorApproval": false
+    }
+  ],
+  "director": {
+    "agentId": "director",
+    "autoApproveFor": [],
+    "requireApproval": ["developer", "reviewer"],
+    "alwaysNotify": ["blocker"]
+  },
+  "joiningPatterns": [
+    {
+      "id": "build-review",
+      "file": "templates/joins/design-to-build.md",
+      "agents": ["developer", "reviewer"],
+      "flow": "pipeline"
+    }
+  ]
+}
