@@ -114,6 +114,44 @@ if (!process.stdout.isTTY && !NON_INTERACTIVE) {
   process.exit(0);
 }
 
+// ─── Raw Key Reader ──────────────────────────────────────────────────────────
+
+/**
+ * Reads a single raw keystroke from stdin.
+ * Arrow keys arrive as multi-byte escape sequences (\x1b[A etc).
+ */
+function readRawKey() {
+  return new Promise((resolve) => {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    const onData = (chunk) => {
+      process.stdin.removeListener('data', onData);
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      resolve(chunk);
+    };
+    process.stdin.once('data', onData);
+  });
+}
+
+function classifyKey(chunk) {
+  if (chunk === '\x1b[A' || chunk === '\x1bOA') return 'UP';
+  if (chunk === '\x1b[B' || chunk === '\x1bOB') return 'DOWN';
+  if (chunk === '\r'     || chunk === '\n')      return 'ENTER';
+  if (chunk === ' ')                             return 'SPACE';
+  if (chunk === '\x03'   || chunk === '\x04') {  // Ctrl-C / Ctrl-D
+    process.stdout.write('\n');
+    process.exit(0);
+  }
+  return null;
+}
+
+// ─── ANSI Helpers ─────────────────────────────────────────────────────────────
+
+function cursorUp(n) { if (n > 0) process.stdout.write(`\x1b[${n}A`); }
+function clearDown() { process.stdout.write('\x1b[0J'); }
+
 // ─── Remote Fetch ────────────────────────────────────────────────────────────
 
 const tmpDir = path.join(os.tmpdir(), `rna-init-${Date.now()}`);
@@ -141,89 +179,172 @@ async function getFile(relPath) {
   return fetchText(`${GH_RAW_BASE}/${relPath}`);
 }
 
-// ─── Readline Prompts ────────────────────────────────────────────────────────
+// ─── Interactive Prompts ──────────────────────────────────────────────────────
 
-let rl = null;
+/**
+ * Free-text input. Uses readline; closes stdin cleanly before returning so
+ * subsequent raw-mode calls don't conflict.
+ */
+async function ask(prompt, defaultVal, explicitVal) {
+  if (explicitVal != null) return String(explicitVal);
+  if (NON_INTERACTIVE)     return String(defaultVal);
 
-function openRl() {
-  if (rl) return;
-  try {
-    // Node ≥ 18: readline/promises
-    const { createInterface } = require('readline/promises');
-    rl = createInterface({ input: process.stdin, output: process.stdout });
-    rl._promises = true;
-  } catch {
-    // Node < 18 fallback
-    rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-    rl._promises = false;
-  }
-}
+  const hint = defaultVal ? c('gray', ` (${defaultVal})`) : '';
 
-function closeRl() {
-  if (rl) { rl.close(); rl = null; }
-}
-
-async function question(q) {
-  openRl();
-  if (rl._promises) {
-    return (await rl.question(q)).trim();
-  }
-  return new Promise(resolve => {
-    rl.question(q, ans => resolve(ans.trim()));
+  return new Promise((resolve) => {
+    const rl = require('readline').createInterface({
+      input:  process.stdin,
+      output: process.stdout,
+    });
+    let answered = false;
+    rl.question(`\n${c('bold', prompt)}${hint}\n  › `, (ans) => {
+      answered = true;
+      rl.close();
+      resolve(ans.trim() || String(defaultVal));
+    });
+    rl.once('close', () => {
+      if (!answered) resolve(String(defaultVal));
+    });
   });
 }
 
 /**
- * Free-text question. Returns explicitVal if supplied, default if non-interactive.
+ * Single-select with ↑/↓ to move, Enter to confirm.
+ * explicitVal: string prefix to match (used when flag is supplied).
  */
-async function ask(prompt, defaultVal, explicitVal) {
-  if (explicitVal != null)  return String(explicitVal);
-  if (NON_INTERACTIVE)      return String(defaultVal);
-  const hint = defaultVal ? c('gray', ` (${defaultVal})`) : '';
-  const ans  = await question(`\n${c('bold', prompt)}${hint}\n  › `);
-  return ans || String(defaultVal);
-}
-
-/**
- * Single-select from a list.
- * explicitVal: string prefix to match against choices (e.g. 'copilot' matches 'copilot — ...')
- */
-async function choose(prompt, choices, defaultIdx = 0, explicitVal = null) {
+async function arrowSelect(prompt, choices, defaultIdx = 0, explicitVal = null) {
   if (explicitVal != null) {
     const idx = choices.findIndex(ch => ch.startsWith(explicitVal));
     if (idx >= 0) return choices[idx];
   }
   if (NON_INTERACTIVE) return choices[defaultIdx];
 
-  console.log(`\n${c('bold', prompt)}`);
-  choices.forEach((ch, i) => {
-    const marker = i === defaultIdx ? c('green', '●') : c('gray', '○');
-    console.log(`  ${marker} ${c('cyan', String(i + 1))}  ${ch}`);
-  });
-  const ans = await question(`  Select [${defaultIdx + 1}]: `);
-  const idx = parseInt(ans, 10) - 1;
-  return (idx >= 0 && idx < choices.length) ? choices[idx] : choices[defaultIdx];
+  let current = defaultIdx;
+  let linesDrawn = 0;
+
+  function draw(isFirst) {
+    if (!isFirst) {
+      cursorUp(linesDrawn);
+      clearDown();
+    }
+    const header = `\n${c('bold', prompt)} ${c('gray', '(↑↓ move · enter confirm)')}`;
+    process.stdout.write(header + '\n');
+    choices.forEach((ch, i) => {
+      if (i === current) {
+        process.stdout.write(`  ${c('cyan', '❯')} ${c('bold', ch)}\n`);
+      } else {
+        process.stdout.write(`    ${c('gray', ch)}\n`);
+      }
+    });
+    // blank line + prompt line + choices
+    linesDrawn = 1 + 1 + choices.length;
+  }
+
+  draw(true);
+
+  while (true) {
+    const action = classifyKey(await readRawKey());
+    if (action === 'UP')    current = (current - 1 + choices.length) % choices.length;
+    if (action === 'DOWN')  current = (current + 1) % choices.length;
+    if (action === 'ENTER') break;
+    draw(false);
+  }
+
+  // Collapse to single confirmation line
+  cursorUp(linesDrawn);
+  clearDown();
+  process.stdout.write(`\n${c('bold', prompt)}\n  ${c('green', '✔')} ${c('cyan', choices[current])}\n`);
+
+  return choices[current];
 }
 
 /**
- * Multi-select from a list.
- * explicitVals: string[] of pre-validated values (pass null to prompt).
+ * Multi-select with ↑/↓ to move, Space to toggle, Enter to confirm.
+ * explicitVals: pre-validated string[] (bypass prompt when flags supplied).
  */
-async function multiChoose(prompt, choices, defaults, explicitVals = null) {
+async function arrowMultiSelect(prompt, choices, defaults = [], explicitVals = null) {
   if (explicitVals != null) return explicitVals.filter(v => choices.includes(v));
   if (NON_INTERACTIVE)      return defaults;
 
-  console.log(`\n${c('bold', prompt)}`);
-  choices.forEach((ch, i) => {
-    const marker = defaults.includes(ch) ? c('green', '●') : c('gray', '○');
-    console.log(`  ${marker} ${c('cyan', String(i + 1))}  ${ch}`);
-  });
-  const ans = await question(`  Numbers (comma-separated), or Enter to keep all: `);
-  if (!ans) return choices;
-  return ans.split(',')
-    .map(s => parseInt(s.trim(), 10) - 1)
-    .filter(i => i >= 0 && i < choices.length)
-    .map(i => choices[i]);
+  const selected = new Set(defaults);
+  let current    = 0;
+  let linesDrawn = 0;
+
+  function draw(isFirst) {
+    if (!isFirst) {
+      cursorUp(linesDrawn);
+      clearDown();
+    }
+    const header = `\n${c('bold', prompt)} ${c('gray', '(↑↓ move · space toggle · enter confirm)')}`;
+    process.stdout.write(header + '\n');
+    choices.forEach((ch, i) => {
+      const tick   = selected.has(ch) ? c('green', '◉') : c('gray',  '◯');
+      const cursor = i === current     ? c('cyan', '❯')  : ' ';
+      const label  = i === current     ? c('bold', ch)   : ch;
+      process.stdout.write(`  ${cursor} ${tick} ${label}\n`);
+    });
+    linesDrawn = 1 + 1 + choices.length;
+  }
+
+  draw(true);
+
+  while (true) {
+    const action = classifyKey(await readRawKey());
+    if (action === 'UP')    current = (current - 1 + choices.length) % choices.length;
+    if (action === 'DOWN')  current = (current + 1) % choices.length;
+    if (action === 'SPACE') {
+      if (selected.has(choices[current])) selected.delete(choices[current]);
+      else                                selected.add(choices[current]);
+    }
+    if (action === 'ENTER') break;
+    draw(false);
+  }
+
+  const result = choices.filter(ch => selected.has(ch));
+
+  // Collapse to single confirmation line
+  cursorUp(linesDrawn);
+  clearDown();
+  const summary = result.length ? c('cyan', result.join(', ')) : c('gray', '(none)');
+  process.stdout.write(`\n${c('bold', prompt)}\n  ${c('green', '✔')} ${summary}\n`);
+
+  return result;
+}
+
+/**
+ * Required-field guard.
+ * Wraps any async prompt function. If the result is empty and the field is
+ * required, shows a "reselect / skip / quit" menu so the user can recover.
+ *
+ * @param {string}   label    Human name for the field shown in the warning
+ * @param {Function} fn       Async function that runs the prompt, returns value
+ * @returns {Promise<*>}
+ */
+async function withRequired(label, fn) {
+  while (true) {
+    const result = await fn();
+    const isEmpty = Array.isArray(result) ? result.length === 0 : !result;
+    if (!isEmpty) return result;
+
+    process.stdout.write(`\n  ${c('yellow', '⚠')}  ${c('bold', `"${label}"`)}`
+      + c('yellow', ' requires at least one selection.\n'));
+
+    const action = await arrowSelect(
+      'What would you like to do?',
+      [
+        'reselect  — go back and choose again',
+        'skip      — continue without this field',
+        'quit      — exit the wizard',
+      ],
+      0
+    );
+
+    if (action.startsWith('reselect')) continue;
+    if (action.startsWith('skip'))     return result;
+    /* quit */
+    process.stdout.write('\n  Aborted.\n\n');
+    process.exit(0);
+  }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -241,7 +362,7 @@ async function main() {
 
   const projectName = await ask('Project name?', cwdName, PROJECT_FLAG);
 
-  const platformChoice = await choose(
+  const platformChoice = await arrowSelect(
     'Platform?',
     [
       'cursor        — .cursor/ agents, rules, skills, commands',
@@ -273,7 +394,7 @@ async function main() {
   } else if (COLLECTIVE_FLAG === 'full') {
     selectedAgents = AGENT_IDS;
   } else {
-    const sizeChoice = await choose(
+    const sizeChoice = await arrowSelect(
       'Collective size?',
       [
         'minimal  — 1 agent (developer only, fastest start)',
@@ -287,16 +408,19 @@ async function main() {
     } else if (sizeChoice.startsWith('full')) {
       selectedAgents = AGENT_IDS;
     } else {
-      selectedAgents = await multiChoose(
-        'Which agents? (recommended: start with developer + at least one reviewer)',
-        AGENT_IDS,
-        AGENT_IDS
+      selectedAgents = await withRequired(
+        'Agents',
+        () => arrowMultiSelect(
+          'Which agents? (recommended: start with developer + at least one reviewer)',
+          AGENT_IDS,
+          AGENT_IDS
+        )
       );
     }
   }
 
   // Rules
-  const selectedRules = await multiChoose(
+  const selectedRules = await arrowMultiSelect(
     'Which rules to include?',
     RULE_IDS,
     RULE_IDS,
@@ -305,7 +429,7 @@ async function main() {
 
   // Joining patterns
   const includeJoins = selectedAgents.length > 1
-    ? (await choose('Include joining (multi-agent pipeline) patterns?', ['yes', 'no'], 0)).startsWith('yes')
+    ? (await arrowSelect('Include joining (multi-agent pipeline) patterns?', ['yes', 'no'], 0)).startsWith('yes')
     : false;
 
   const techStack = await ask('Primary language?', 'TypeScript', STACK_FLAG);
@@ -327,15 +451,16 @@ async function main() {
   console.log('');
 
   if (!NON_INTERACTIVE) {
-    const go = await question(c('bold', '  Proceed? (Y/n) › '));
-    if (go.toLowerCase() === 'n') {
-      console.log('\n  Aborted.\n');
-      closeRl();
+    const go = await arrowSelect(
+      'Proceed?',
+      ['yes — scaffold the project', 'no  — abort'],
+      0
+    );
+    if (go.startsWith('no')) {
+      process.stdout.write('\n  Aborted.\n\n');
       return;
     }
   }
-
-  closeRl();
 
   // ── Phase 2: Load template files ─────────────────────────────────────────
 
@@ -496,7 +621,6 @@ async function main() {
 }
 
 main().catch(err => {
-  closeRl();
   console.error(c('red', `\n  ✗ Init failed: ${err.message}`));
   if (process.env.RNA_DEBUG) console.error(err.stack);
   process.exit(1);
