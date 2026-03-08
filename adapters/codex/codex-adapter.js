@@ -24,12 +24,13 @@ const OUTPUT_DIR  = process.argv[3] || process.cwd();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadSchema() {
-  if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`✗ Schema not found: ${SCHEMA_PATH}`);
+function loadSchema(customPath) {
+  const p = customPath || SCHEMA_PATH;
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Schema not found: ${p}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 function ensureDir(dir) {
@@ -173,20 +174,28 @@ function generateOverrides(schema, outDir) {
   console.log(`  ✓ api/AGENTS.override.md`);
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Run (programmatic entry point) ─────────────────────────────────────────
+
+function run(schemaPath, outDir) {
+  const schema = loadSchema(schemaPath);
+  const dir    = outDir || OUTPUT_DIR;
+  generateAgentsMd(schema, dir);
+  generateOverrides(schema, dir);
+}
+
+// ─── Main (CLI entry point) ───────────────────────────────────────────────────
 
 function main() {
   console.log('\nOpenAI Codex Adapter — RNA Method v1');
   console.log(`  Schema : ${SCHEMA_PATH}`);
   console.log(`  Output : ${OUTPUT_DIR}\n`);
 
-  const schema = loadSchema();
-
-  generateAgentsMd(schema, OUTPUT_DIR);
-  generateOverrides(schema, OUTPUT_DIR);
+  run(SCHEMA_PATH, OUTPUT_DIR);
 
   console.log('\n✓ Done. Codex-native AGENTS.md generated from RNA schema.');
   console.log('  Next: run the Codex CLI in the project root, verify context loads from timeline.json at session start');
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { run };

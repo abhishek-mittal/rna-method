@@ -39,12 +39,13 @@ const OUTPUT_DIR  = process.argv[3] || process.cwd();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadSchema() {
-  if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`✗ Schema not found: ${SCHEMA_PATH}`);
+function loadSchema(customPath) {
+  const p = customPath || SCHEMA_PATH;
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Schema not found: ${p}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 function ensureDir(dir) {
@@ -202,7 +203,17 @@ function generateRuleFiles(schema, outDir) {
   console.log(`  ✓ ${schema.rules.filter(r => !r.alwaysApply).length} rule files (.kimi/rules/)`);
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Run (programmatic entry point) ─────────────────────────────────────────
+
+function run(schemaPath, outDir) {
+  const schema = loadSchema(schemaPath);
+  const dir    = outDir || OUTPUT_DIR;
+  generateKimiMd(schema, dir);
+  generateAgentFiles(schema, dir);
+  generateRuleFiles(schema, dir);
+}
+
+// ─── Main (CLI entry point) ───────────────────────────────────────────────────
 
 function main() {
   console.log('\nKimi Code Adapter — RNA Method v1 (EXPERIMENTAL)');
@@ -210,14 +221,12 @@ function main() {
   console.log(`  Schema : ${SCHEMA_PATH}`);
   console.log(`  Output : ${OUTPUT_DIR}\n`);
 
-  const schema = loadSchema();
-
-  generateKimiMd(schema, OUTPUT_DIR);
-  generateAgentFiles(schema, OUTPUT_DIR);
-  generateRuleFiles(schema, OUTPUT_DIR);
+  run(SCHEMA_PATH, OUTPUT_DIR);
 
   console.log('\n⚠️  Kimi adapter is experimental. Manual agent loading required.');
   console.log('   See KIMI.md in your project root for usage instructions.');
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { run };

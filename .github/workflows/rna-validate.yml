@@ -83,3 +83,34 @@ jobs:
             templates/minimal-collective/receptors.json \
             /tmp/rna-test-${{ matrix.adapter }} \
             2>&1 && echo "✓ ${{ matrix.adapter }} adapter ran without error" || echo "⚠ ${{ matrix.adapter }} adapter exited with non-zero (may be expected for unimplemented platforms)"
+
+  test-init:
+    name: Test Init (non-interactive)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [cursor, copilot, claude-code, codex, kimi]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run init --non-interactive for ${{ matrix.platform }}
+        run: |
+          mkdir -p /tmp/rna-init-test-${{ matrix.platform }}
+          node tools/init.js \
+            --non-interactive \
+            --platform=${{ matrix.platform }} \
+            --collective=minimal \
+            --project-name=ci-test \
+            --output=/tmp/rna-init-test-${{ matrix.platform }}
+
+      - name: Verify output files exist
+        run: |
+          test -f /tmp/rna-init-test-${{ matrix.platform }}/rna-schema.json && echo "✓ rna-schema.json"
+          test -f /tmp/rna-init-test-${{ matrix.platform }}/_memory/rna-method/receptors.json && echo "✓ receptors.json"
+          test -f /tmp/rna-init-test-${{ matrix.platform }}/_memory/rna-method/timeline.json && echo "✓ timeline.json"

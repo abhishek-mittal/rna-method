@@ -24,12 +24,13 @@ const OUTPUT_FILE = process.argv[3] || path.join(process.cwd(), 'CLAUDE.md');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadSchema() {
-  if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`✗ Schema not found: ${SCHEMA_PATH}`);
+function loadSchema(customPath) {
+  const p = customPath || SCHEMA_PATH;
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Schema not found: ${p}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 // ─── Generator ────────────────────────────────────────────────────────────────
@@ -141,14 +142,27 @@ function generate(schema) {
   return lines.join('\n');
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Run (programmatic entry point) ─────────────────────────────────────────
+
+/**
+ * @param {string} schemaPath  path to rna-schema.json
+ * @param {string} outDir      project root directory (CLAUDE.md written here)
+ */
+function run(schemaPath, outDir) {
+  const schema  = loadSchema(schemaPath);
+  const outFile = path.join(outDir || path.dirname(OUTPUT_FILE), 'CLAUDE.md');
+  const content = generate(schema);
+  fs.writeFileSync(outFile, content, 'utf-8');
+}
+
+// ─── Main (CLI entry point) ───────────────────────────────────────────────────
 
 function main() {
   console.log('\nClaude Code Adapter — RNA Method v1');
   console.log(`  Schema : ${SCHEMA_PATH}`);
   console.log(`  Output : ${OUTPUT_FILE}\n`);
 
-  const schema = loadSchema();
+  const schema  = loadSchema();
   const content = generate(schema);
   fs.writeFileSync(OUTPUT_FILE, content, 'utf-8');
 
@@ -157,4 +171,6 @@ function main() {
   console.log('  Next: open Claude Code in the project root, verify context loads from timeline.json at session start');
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { run };

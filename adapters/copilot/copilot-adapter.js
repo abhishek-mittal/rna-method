@@ -25,12 +25,13 @@ const OUTPUT_DIR  = process.argv[3] || path.join(process.cwd(), '.github');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadSchema() {
-  if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`✗ Schema not found: ${SCHEMA_PATH}`);
+function loadSchema(customPath) {
+  const p = customPath || SCHEMA_PATH;
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Schema not found: ${p}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 function ensureDir(dir) {
@@ -154,21 +155,29 @@ function generateInstructionFiles(schema, outDir) {
   console.log(`  ✓ ${schema.rules.filter(r => !r.alwaysApply).length} instruction files (.instructions.md)`);
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Run (programmatic entry point) ─────────────────────────────────────────
+
+function run(schemaPath, outDir) {
+  const schema = loadSchema(schemaPath);
+  const dir    = outDir || OUTPUT_DIR;
+  generateAgents(schema, dir);
+  generateCopilotInstructions(schema, dir);
+  generateInstructionFiles(schema, dir);
+}
+
+// ─── Main (CLI entry point) ───────────────────────────────────────────────────
 
 function main() {
   console.log('\nGitHub Copilot Adapter — RNA Method v1');
   console.log(`  Schema : ${SCHEMA_PATH}`);
   console.log(`  Output : ${OUTPUT_DIR}\n`);
 
-  const schema = loadSchema();
-
-  generateAgents(schema, OUTPUT_DIR);
-  generateCopilotInstructions(schema, OUTPUT_DIR);
-  generateInstructionFiles(schema, OUTPUT_DIR);
+  run(SCHEMA_PATH, OUTPUT_DIR);
 
   console.log('\n✓ Done. Copilot-native .github/ files generated from RNA schema.');
   console.log('  Next: open GitHub Copilot chat, type @developer and verify context loads from timeline.json');
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { run };

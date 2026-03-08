@@ -18,42 +18,44 @@ You define the collective once in a single JSON schema. Platform adapters transl
 
 ---
 
-## Quick Start (4 steps)
+## Quick Start
 
-**Step 1 — Copy the minimal template into your project:**
+### Option A — Interactive (recommended)
 
-```bash
-cp -r path/to/rna-method/templates/minimal-collective _memory/rna-method
-```
-
-**Step 2 — Edit the schema to match your project:**
+**No clone required.** Fetches templates live from GitHub:
 
 ```bash
-# Open schema/rna-schema.json and set:
-#   meta.projectName  → your project name
-#   meta.platform     → cursor | copilot | claude-code | codex | kimi
+node -e "$(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/init.js)"
 ```
 
-**Step 3 — Run the adapter for your platform:**
+Or, if you have the repo cloned:
 
 ```bash
-# GitHub Copilot example
-node adapters/copilot/copilot-adapter.js schema/rna-schema.json ./
-
-# Cursor
-node adapters/cursor/cursor-adapter.js schema/rna-schema.json ./
-
-# Claude Code
-node adapters/claude-code/claude-code-adapter.js schema/rna-schema.json ./
+node tools/init.js
 ```
 
-**Step 4 — Invoke your first agent:**
+The init wizard asks 7 questions (platform, team size, agents, rules, stack) and writes everything:
+`rna-schema.json`, `_memory/rna-method/receptors.json`, `_memory/rna-method/timeline.json`,
+and all platform-specific agent/rule files.
+
+### Option B — Non-interactive / CI
+
+```bash
+node tools/init.js --non-interactive \
+  --platform=copilot \
+  --collective=minimal \
+  --project-name=my-project
+```
+
+### After init — invoke your first agent
 
 ```
 @developer Implement a user authentication endpoint
 ```
 
-Your AI editor will now load the Developer agent's identity, rules, and protocols automatically.
+Your AI editor loads the Developer agent's identity, rules, and protocols automatically.
+
+> **Manual install?** See [docs/getting-started.md](docs/getting-started.md) for the step-by-step approach.
 
 ---
 

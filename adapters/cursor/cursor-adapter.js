@@ -27,12 +27,13 @@ const OUTPUT_DIR  = process.argv[3] || path.join(process.cwd(), '.cursor');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadSchema() {
-  if (!fs.existsSync(SCHEMA_PATH)) {
-    console.error(`✗ Schema not found: ${SCHEMA_PATH}`);
+function loadSchema(customPath) {
+  const p = customPath || SCHEMA_PATH;
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Schema not found: ${p}`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf-8'));
+  return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
 function ensureDir(dir) {
@@ -175,22 +176,30 @@ function generateCommands(schema, outDir) {
   console.log(`  ✓ ${schema.commands.length} command files`);
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Run (programmatic entry point) ─────────────────────────────────────────
+
+function run(schemaPath, outDir) {
+  const schema = loadSchema(schemaPath);
+  const dir    = outDir || OUTPUT_DIR;
+  generateAgents(schema, dir);
+  generateRules(schema, dir);
+  generateSkills(schema, dir);
+  generateCommands(schema, dir);
+}
+
+// ─── Main (CLI entry point) ───────────────────────────────────────────────────
 
 function main() {
   console.log('\nCursor IDE Adapter — RNA Method v1');
   console.log(`  Schema : ${SCHEMA_PATH}`);
   console.log(`  Output : ${OUTPUT_DIR}\n`);
 
-  const schema = loadSchema();
-
-  generateAgents(schema, OUTPUT_DIR);
-  generateRules(schema, OUTPUT_DIR);
-  generateSkills(schema, OUTPUT_DIR);
-  generateCommands(schema, OUTPUT_DIR);
+  run(SCHEMA_PATH, OUTPUT_DIR);
 
   console.log('\n✓ Done. Cursor-native .cursor/ files generated from RNA schema.');
   console.log('  Next: open Cursor, invoke any /command, verify the agent loads context from timeline.json');
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { run };

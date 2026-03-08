@@ -4,6 +4,82 @@ This directory contains utility scripts for managing and validating your RNA Met
 
 ---
 
+## init.js — Interactive Project Init
+
+One-command scaffolding. Asks you 7 questions and writes everything: `_memory/` config files,
+platform agent/rule files, and validates the result.
+
+### Run modes
+
+**Embedded** (from inside the cloned repo):
+```bash
+node tools/init.js
+```
+
+**Remote** (no clone needed — fetches templates from GitHub on the fly):
+```bash
+node -e "$(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/init.js)"
+```
+
+**Non-interactive / CI** (all answers via flags):
+```bash
+node tools/init.js --non-interactive \
+  --platform=copilot \
+  --collective=minimal \
+  --project-name=my-project \
+  --stack=TypeScript \
+  --framework="Next.js"
+```
+
+### Flags
+
+| Flag | Values | Default |
+|---|---|---|
+| `--platform` | `cursor` `copilot` `claude-code` `codex` `kimi` | Interactive |
+| `--collective` | `minimal` `full` | Interactive |
+| `--agents` | comma-separated IDs | From collective |
+| `--rules` | comma-separated IDs | All 4 rules |
+| `--project-name` | string | `basename(cwd)` |
+| `--stack` | string | `TypeScript` |
+| `--framework` | string | `Node.js` |
+| `--output` | dir path | `cwd` |
+| `--non-interactive` | flag | off |
+
+**Valid agent IDs:** `director` `developer` `reviewer` `architect` `researcher` `ops`
+
+**Valid rule IDs:** `coding-standards` `security-gate` `review-gate` `docs-standards`
+
+### What it creates
+
+```
+<output>/
+  rna-schema.json                     ← schema (source of truth)
+  _memory/
+    rna-method/
+      receptors.json                  ← agent registry
+      timeline.json                   ← project state
+      checkpoints/                    ← created empty, ready
+  <platform-specific files>           ← from the adapter
+```
+
+### Re-running
+
+Re-run after editing `rna-schema.json` to regenerate platform config:
+```bash
+# Re-run the adapter only (faster than full init)
+node adapters/copilot/copilot-adapter.js rna-schema.json ./
+```
+
+### Debug
+
+```bash
+RNA_DEBUG=1 node tools/init.js   # print full stack traces on error
+```
+
+---
+
+---
+
 ## validate-registry.js
 
 Runtime health checker for your RNA registry files (`receptors.json` and `agent-context.json`).

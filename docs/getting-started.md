@@ -12,9 +12,26 @@ This guide walks you from zero to a working multi-agent collective in approximat
 
 ---
 
-## Step 1 — Copy the Schema Template
+## Step 1 — Run the Init Wizard
 
-Choose a starting template based on your team size:
+The fastest path is the interactive init wizard. **No clone required** — it fetches everything from GitHub:
+
+```bash
+node -e "$(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/init.js)"
+```
+
+> **If you have the repo cloned**, run `node tools/init.js` from inside it instead.
+
+The wizard asks 7 questions and handles Steps 2–4 automatically.
+Skip to [Step 5](#step-5--invoke-your-first-agent) once it finishes.
+
+---
+
+## Steps 2–4 (Manual Install)
+
+> Skip this section if you ran the init wizard above.
+
+### Step 2 — Copy the Schema Template
 
 | Template | When to use |
 |---|---|
@@ -22,62 +39,50 @@ Choose a starting template based on your team size:
 | `full-collective` | Team project, full development lifecycle |
 
 ```bash
-# For a solo/minimal setup:
+# Solo/minimal setup:
 cp -r templates/minimal-collective _memory/rna-method
 
-# For a full-team setup:
+# Full-team setup:
 cp -r templates/full-collective _memory/rna-method
 ```
 
 Your project will now have:
 ```
-_memory/
-  rna-method/
-    receptors.json     ← signal routing and agent registry
-    timeline.json      ← project state and signal queue
+_memory/rna-method/
+  receptors.json     ← signal routing and agent registry
+  timeline.json      ← project state and signal queue
 ```
 
----
-
-## Step 2 — Copy and Edit the Schema
+### Step 3 — Copy and Edit the Schema
 
 ```bash
-cp schema/rna-schema.json my-rna-schema.json
+cp schema/rna-schema.json rna-schema.json
 ```
 
-Open `my-rna-schema.json` and update the `meta` section:
+Open `rna-schema.json` and update `meta.projectName` and `meta.platform`:
 
 ```json
 {
   "meta": {
     "projectName": "my-app",
-    "platform": "copilot",
-    "schemaVersion": "1.0.0",
-    "lastUpdated": "2026-01-01",
-    "director": "Director"
+    "platform": "copilot"
   }
 }
 ```
 
 **Platform values:** `cursor` | `copilot` | `claude-code` | `codex` | `kimi`
 
-The rest of the schema defines your agents, rules, skills, hooks, and joining patterns. You can leave the defaults in place and customize later.
-
----
-
-## Step 3 — Run the Adapter
-
-From your project root, run the adapter for your platform:
+### Step 4 — Run the Adapter
 
 ```bash
 # GitHub Copilot
-node path/to/rna-method/adapters/copilot/copilot-adapter.js my-rna-schema.json ./
+node path/to/rna-method/adapters/copilot/copilot-adapter.js rna-schema.json ./
 
 # Cursor
-node path/to/rna-method/adapters/cursor/cursor-adapter.js my-rna-schema.json ./
+node path/to/rna-method/adapters/cursor/cursor-adapter.js rna-schema.json ./.cursor
 
 # Claude Code
-node path/to/rna-method/adapters/claude-code/claude-code-adapter.js my-rna-schema.json ./
+node path/to/rna-method/adapters/claude-code/claude-code-adapter.js rna-schema.json ./
 
 # OpenAI Codex
 node path/to/rna-method/adapters/codex/codex-adapter.js my-rna-schema.json ./
