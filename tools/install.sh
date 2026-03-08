@@ -244,7 +244,7 @@ RKEY=""
 read_key() {
   local ch rest
   tty_save
-  IFS= read -rsn1 ch
+  IFS= read -rsN1 ch 2>/dev/null || true
   if [[ "$ch" == $'\x1b' ]]; then
     IFS= read -rsn2 -t 0.1 rest || true
     tty_restore
