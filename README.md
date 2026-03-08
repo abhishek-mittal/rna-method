@@ -1,6 +1,6 @@
 # RNA Method
 
-> **Role-Networked Agent Architecture** — A schema-driven system for turning AI coding assistants into a coordinated agent collective.
+> **Reusable Neural Activators** — A schema-driven system for turning AI coding assistants into a coordinated agent collective.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Schema Version](https://img.shields.io/badge/Schema-v1.0.0-green.svg)](schema/rna-schema.json)
