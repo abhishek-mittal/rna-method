@@ -7,20 +7,55 @@ This guide walks you from zero to a working multi-agent collective in approximat
 ## Prerequisites
 
 - A supported AI editor: Cursor, GitHub Copilot (VS Code), Claude Code, OpenAI Codex, or Kimi Code
-- Node.js 18 or later
+- **bash 4.0+** and **curl** (for the recommended bash installer)
+- Node.js 18+ (optional — only needed for the Node installer or the adapter/validator)
 - A project you want to set up with the RNA Method
 
 ---
 
 ## Step 1 — Run the Init Wizard
 
-The fastest path is the interactive init wizard. **No clone required** — it fetches everything from GitHub:
+### Recommended: Bash installer (zero extra dependencies)
+
+No clone required — fetches everything from GitHub:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/install.sh)
+```
+
+> **macOS note:** macOS ships with bash 3.2 (`/bin/bash`). Install bash 4+ via Homebrew first:
+> `brew install bash` then use `/opt/homebrew/bin/bash tools/install.sh`
+
+> **If you have the repo cloned**, run `bash tools/install.sh` from inside it instead.
+
+The wizard walks through 3 sections (Project Identity, Collective Setup, Stack & Output),
+writes all config files, and then prints a **token footprint report** so you can see exactly
+how light your setup is compared to alternatives like BMAD.
+
+After init, read `_memory/rna-method/session-zero.md` — it's a one-page briefing that explains
+your setup, how to invoke agents, and how to update or validate.
+
+**Common flags:**
+```bash
+bash tools/install.sh --update          # re-run on existing install
+bash tools/install.sh --dry-run          # preview without writing
+bash tools/install.sh --non-interactive \
+  --platform=copilot --collective=minimal --project-name=my-project
+```
+
+### Alternative: Node.js installer (Node 18+)
 
 ```bash
 node -e "$(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/init.js)"
 ```
 
-> **If you have the repo cloned**, run `node tools/init.js` from inside it instead.
+Supports the same flags. The Node installer additionally runs the full platform adapter
+and registry validator after writing the memory files.
+
+```bash
+node tools/init.js --update
+node tools/init.js --dry-run
+```
 
 The wizard asks 7 questions and handles Steps 2–4 automatically.
 Skip to [Step 5](#step-5--invoke-your-first-agent) once it finishes.

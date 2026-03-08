@@ -54,6 +54,8 @@ function flag(name) {
 }
 
 const NON_INTERACTIVE = argv.includes('--non-interactive');
+const DRY_RUN         = argv.includes('--dry-run');
+const UPDATE_FLAG     = argv.includes('--update');
 const PLATFORM_FLAG   = flag('platform');
 const COLLECTIVE_FLAG = flag('collective');
 const AGENTS_FLAG     = flag('agents');
@@ -347,6 +349,107 @@ async function withRequired(label, fn) {
   }
 }
 
+// ─── Dry-run file helpers ─────────────────────────────────────────────────────
+
+const FOOTPRINT_PATHS = [];
+
+function mkdirp(dir) {
+  if (DRY_RUN) {
+    process.stdout.write(c('gray', `  [dry-run] mkdir -p ${dir}\n`));
+    return;
+  }
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function writef(filePath, content) {
+  FOOTPRINT_PATHS.push(filePath);
+  if (DRY_RUN) {
+    const lines = content.split('\n').length;
+    process.stdout.write(c('gray', `  [dry-run] write ${filePath} (${lines} lines)\n`));
+    return;
+  }
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf-8');
+}
+
+function reportFootprint() {
+  console.log('');
+  console.log(c('bold', '  ─ Token Footprint ────────────────────────────────'));
+  console.log(`  ${'File'.padEnd(46)}  ${'Bytes'.padStart(6)}  ${'~Tokens'.padStart(8)}`);
+  console.log(`  ${'-'.repeat(46)}  ${'-'.repeat(6)}  ${'-'.repeat(8)}`);
+  let totalBytes = 0;
+  for (const f of FOOTPRINT_PATHS) {
+    if (!fs.existsSync(f)) continue;
+    const bytes  = fs.statSync(f).size;
+    const tokens = Math.round(bytes / 4);
+    totalBytes  += bytes;
+    console.log(`  ${path.basename(f).padEnd(46)}  ${String(bytes).padStart(6)}  ~${String(tokens).padStart(7)}`);
+  }
+  const totalTokens = Math.round(totalBytes / 4);
+  console.log(`  ${'-'.repeat(46)}  ${'-'.repeat(6)}  ${'-'.repeat(8)}`);
+  console.log(`  ${'TOTAL'.padEnd(46)}  ${String(totalBytes).padStart(6)}  ~${String(totalTokens).padStart(7)}`);
+  console.log('');
+  console.log(c('gray', '  BMAD comparison: bmad-method typically loads ~8 000 tokens on first message.'));
+  console.log(c('gray', '  RNA Method loads only what the active agent needs (~500–1 200 tokens).'));
+}
+
+// ─── Session-zero Builder ─────────────────────────────────────────────────────
+
+function buildSessionZero({ projectName, platform, selectedAgents, techStack, framework }) {
+  const ts = new Date().toISOString();
+  const agentList = selectedAgents.join(', ');
+  return `---
+generated_by: rna-method/init.js
+generated_at: ${ts}
+project: ${projectName}
+platform: ${platform}
+---
+
+# RNA Method — Session Zero
+
+## What this project uses
+
+| Field     | Value                    |
+|-----------|---------------------------|
+| Project   | ${projectName}           |
+| Platform  | ${platform}              |
+| Stack     | ${techStack} / ${framework} |
+| Agents    | ${agentList}             |
+| Init date | ${ts}                    |
+
+## Activate your first agent
+
+\`\`\`
+@developer Implement a user authentication endpoint
+\`\`\`
+
+## Key files
+
+| File | Purpose |
+|------|---------|
+| \`rna-schema.json\` | Source of truth — agents, rules, skills, hooks |
+| \`_memory/rna-method/receptors.json\` | Agent registry |
+| \`_memory/rna-method/timeline.json\` | Project state |
+| \`${PLATFORM_ENTRY[platform]}\` | ${platform} loader |
+
+## How to re-run
+
+\`\`\`bash
+# Update an existing install:
+bash tools/install.sh --update
+
+# Or with the Node installer:
+node tools/init.js --update
+\`\`\`
+
+## How to validate
+
+\`\`\`bash
+node tools/validate-registry.js --root ./
+\`\`\`
+`;
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -354,11 +457,38 @@ async function main() {
   console.log(c('bold', c('cyan', '  ●  RNA Method — Interactive Init  ●')));
   console.log(c('gray', `  Mode : ${IS_EMBEDDED ? 'embedded (local files)' : 'remote (GitHub raw)'}`));
   console.log(c('gray', `  Node : ${process.version}`));
+  if (DRY_RUN)    console.log(c('yellow', '  ⚠  DRY-RUN — nothing will be written'));
+  if (UPDATE_FLAG) console.log(c('yellow', '  ⚡  UPDATE MODE — replacing existing install'));
   console.log('');
 
-  const cwdName = path.basename(process.cwd());
+  const cwdName    = path.basename(process.cwd());
+  const outputDir  = OUTPUT_FLAG ? path.resolve(OUTPUT_FLAG) : process.cwd();
+
+  // ── Update detection ──────────────────────────────────────────────────────
+
+  const existingSchema = path.join(outputDir, 'rna-schema.json');
+  if (fs.existsSync(existingSchema) && !UPDATE_FLAG) {
+    console.log(c('yellow', `  ⚠  Existing install detected at: ${outputDir}`));
+    const how = await arrowSelect(
+      'How would you like to proceed?',
+      [
+        'update  — refresh files, clean stale platform dir',
+        'fresh   — overwrite everything (clean slate)',
+        'abort   — exit without changes',
+      ],
+      0
+    );
+    if (how.startsWith('abort')) {
+      process.stdout.write('\n  Aborted.\n\n');
+      return;
+    }
+    // fresh = continue as normal; update = enable stale cleanup below
+  }
 
   // ── Phase 1: Prompts ──────────────────────────────────────────────────────
+
+  console.log('');
+  console.log(c('bold', '  ── ① Project Identity ──────────────────────────────'));
 
   const projectName = await ask('Project name?', cwdName, PROJECT_FLAG);
 
@@ -394,6 +524,8 @@ async function main() {
   } else if (COLLECTIVE_FLAG === 'full') {
     selectedAgents = AGENT_IDS;
   } else {
+    console.log('');
+    console.log(c('bold', '  ── ② Collective Setup ──────────────────────────────'));
     const sizeChoice = await arrowSelect(
       'Collective size?',
       [
@@ -432,10 +564,11 @@ async function main() {
     ? (await arrowSelect('Include joining (multi-agent pipeline) patterns?', ['yes', 'no'], 0)).startsWith('yes')
     : false;
 
+  console.log('');
+  console.log(c('bold', '  ── ③ Stack & Output ────────────────────────────────'));
+
   const techStack = await ask('Primary language?', 'TypeScript', STACK_FLAG);
   const framework = await ask('Framework / runtime?', 'Node.js', FRAMEWORK_FLAG);
-
-  const outputDir = OUTPUT_FLAG ? path.resolve(OUTPUT_FLAG) : process.cwd();
 
   // ── Summary ───────────────────────────────────────────────────────────────
 
@@ -508,23 +641,54 @@ async function main() {
   console.log(c('bold', '  ─ Writing _memory/ ───────────────────────────────'));
 
   const memDir = path.join(outputDir, '_memory', 'rna-method');
-  fs.mkdirSync(memDir, { recursive: true });
-  fs.mkdirSync(path.join(memDir, 'checkpoints'), { recursive: true });
+  mkdirp(memDir);
+  mkdirp(path.join(memDir, 'checkpoints'));
 
   const schemaOutPath    = path.join(outputDir, 'rna-schema.json');
   const receptorsOutPath = path.join(memDir, 'receptors.json');
   const timelineOutPath  = path.join(memDir, 'timeline.json');
+  const sessionZeroPath  = path.join(memDir, 'session-zero.md');
 
-  fs.writeFileSync(schemaOutPath,    JSON.stringify(schema,    null, 2) + '\n', 'utf-8');
-  fs.writeFileSync(receptorsOutPath, JSON.stringify(receptors, null, 2) + '\n', 'utf-8');
-  fs.writeFileSync(timelineOutPath,  JSON.stringify(timeline,  null, 2) + '\n', 'utf-8');
+  // Stale platform dir cleanup (--update mode)
+  if (UPDATE_FLAG) {
+    console.log('');
+    console.log(c('bold', '  ─ Cleaning stale platform files ───────────────────'));
+    const staleDirs = {
+      copilot: path.join(outputDir, '.github', 'agents'),
+      cursor:  path.join(outputDir, '.cursor', 'agents'),
+    };
+    const staleDir = staleDirs[platform];
+    if (staleDir && fs.existsSync(staleDir)) {
+      if (DRY_RUN) {
+        console.log(c('gray', `  [dry-run] rm -rf ${staleDir}`));
+      } else {
+        fs.rmSync(staleDir, { recursive: true, force: true });
+        console.log(c('green', `  ✓ removed ${path.relative(outputDir, staleDir)}`));
+      }
+    }
+  }
+
+  writef(schemaOutPath,    JSON.stringify(schema,    null, 2) + '\n');
+  writef(receptorsOutPath, JSON.stringify(receptors, null, 2) + '\n');
+  writef(timelineOutPath,  JSON.stringify(timeline,  null, 2) + '\n');
+  writef(sessionZeroPath,  buildSessionZero({ projectName, platform, selectedAgents, techStack, framework }));
 
   console.log('  ✓ rna-schema.json');
   console.log('  ✓ _memory/rna-method/receptors.json');
   console.log('  ✓ _memory/rna-method/timeline.json');
+  console.log('  ✓ _memory/rna-method/session-zero.md');
   console.log('  ✓ _memory/rna-method/checkpoints/');
 
+  // Token footprint
+  if (!DRY_RUN) reportFootprint();
+
   // ── Phase 5: Run adapter ──────────────────────────────────────────────────
+
+  if (DRY_RUN) {
+    console.log('');
+    console.log(c('gray', '  [dry-run] skipping adapter + validation'));
+    return;
+  }
 
   console.log('');
   console.log(c('bold', `  ─ Running ${platform} adapter ───────────────────────`));
@@ -607,15 +771,17 @@ async function main() {
   console.log(`    rna-schema.json                         ← source of truth`);
   console.log(`    _memory/rna-method/receptors.json       ← agent registry`);
   console.log(`    _memory/rna-method/timeline.json        ← project state`);
+  console.log(`    _memory/rna-method/session-zero.md      ← start here`);
   console.log(`    ${PLATFORM_ENTRY[platform].padEnd(38)}← ${platform} config`);
   console.log('');
   console.log(c('bold', '  Next steps:'));
-  console.log(`    1. Open ${c('cyan', PLATFORM_ENTRY[platform])} in your editor`);
+  console.log(`    1. Read ${c('cyan', '_memory/rna-method/session-zero.md')} — your quick-start briefing`);
+  console.log(`    2. Open ${c('cyan', PLATFORM_ENTRY[platform])} in your editor`);
   console.log(`       and verify the ${platform} agent context loads`);
-  console.log(`    2. Edit ${c('cyan', 'rna-schema.json')} to customise agents, rules, and skills`);
-  console.log(`    3. Re-run the adapter after schema changes:`);
+  console.log(`    3. Edit ${c('cyan', 'rna-schema.json')} to customise agents, rules, and skills`);
+  console.log(`    4. Re-run the adapter after schema changes:`);
   console.log(c('gray', `       node ${adapterRelPath} rna-schema.json ./`));
-  console.log(`    4. Validate the registry anytime:`);
+  console.log(`    5. Validate the registry anytime:`);
   console.log(c('gray', `       node ${validateRelPath} --root ./`));
   console.log('');
 }

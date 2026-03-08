@@ -20,9 +20,40 @@ You define the collective once in a single JSON schema. Platform adapters transl
 
 ## Quick Start
 
-### Option A — Interactive (recommended)
+### Option A — Bash (recommended, zero dependencies)
 
-**No clone required.** Fetches templates live from GitHub:
+**No clone, no Node required.** Only bash 4.0+ and curl:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/install.sh)
+```
+
+Or, if you have the repo cloned:
+
+```bash
+bash tools/install.sh
+```
+
+The wizard asks 7 questions across 3 sections (Project Identity, Collective Setup, Stack & Output),
+writes everything, and prints a token footprint report.
+
+**Common flags:**
+
+```bash
+# Re-run on an existing install (cleans stale platform files):
+bash tools/install.sh --update
+
+# Preview what would be written without touching disk:
+bash tools/install.sh --dry-run
+
+# Fully scripted (CI / onboarding automation):
+bash tools/install.sh --non-interactive \
+  --platform=copilot --collective=minimal --project-name=my-project
+```
+
+### Option B — Node.js (Node 18+)
+
+**No clone required.**
 
 ```bash
 node -e "$(curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/init.js)"
@@ -34,18 +65,7 @@ Or, if you have the repo cloned:
 node tools/init.js
 ```
 
-The init wizard asks 7 questions (platform, team size, agents, rules, stack) and writes everything:
-`rna-schema.json`, `_memory/rna-method/receptors.json`, `_memory/rna-method/timeline.json`,
-and all platform-specific agent/rule files.
-
-### Option B — Non-interactive / CI
-
-```bash
-node tools/init.js --non-interactive \
-  --platform=copilot \
-  --collective=minimal \
-  --project-name=my-project
-```
+Supports the same flags: `--update`, `--dry-run`, `--non-interactive`, `--platform`, `--collective`, etc.
 
 ### After init — invoke your first agent
 
