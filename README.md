@@ -67,7 +67,27 @@ node tools/init.js
 
 Supports the same flags: `--update`, `--dry-run`, `--non-interactive`, `--platform`, `--collective`, etc.
 
-### After init — invoke your first agent
+### After init — personalise your collective
+
+The install wizard writes **template files**. Before you start using agents, open a new chat in your AI editor and run:
+
+```
+/rna.setup
+```
+
+The agent reads your `package.json`, scans for existing platform files, then asks **5 targeted questions** (all at once — not one at a time):
+
+1. What domain is this project in? *(e.g. web app, data pipeline, CLI tool)*
+2. How many people + AI agents will work on it?
+3. Which AI platform is your primary driver? *(Cursor / Copilot / Claude Code / Codex / Kimi)*
+4. What is your most frequent pain point with AI assistants right now?
+5. What is the project phase? *(greenfield / active / maintenance / refactor)*
+
+It then rewrites `_memory/rna-method/receptors.json`, `timeline.json`, and re-runs the platform adapter — producing agent files, skill files, and instruction files tuned to your answers. Think of `install.sh` as scaffolding and `/rna.setup` as the fit-out.
+
+> **Subsequent changes** — if you add teammates, change platform, or shift phase, run `/rna.update` instead. It preserves your existing customisations and only updates what changed.
+
+### Then — invoke your first agent
 
 ```
 @developer Implement a user authentication endpoint
