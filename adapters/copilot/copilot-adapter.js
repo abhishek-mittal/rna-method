@@ -62,9 +62,24 @@ function mkActivation(agent) {
 <agent-activation CRITICAL="MANDATORY">
 1. Load this full agent file — persona, capabilities, standards, and protocols are all active.
 2. BEFORE ANY OUTPUT: Read \`_memory/rna-method/timeline.json\` — store phase, last decisions, open questions.
-3. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent.id}\`.
-4. Announce: "I am ${agent.name || agent.id.charAt(0).toUpperCase() + agent.id.slice(1)}. [N] active signals. [Summary or 'queue is clear.']"
-5. Ask what to work on, or proceed with the top queued signal.
+3. Read \`_memory/rna-method/agent-context.json\` — note active joins, open checkpoints, blockers.
+4. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent.id}\`.
+5. Announce: "I am ${agent.name || agent.id.charAt(0).toUpperCase() + agent.id.slice(1)}. [N] active signals. [Summary or 'queue is clear.']"
+6. Ask what to work on, or proceed with the top queued signal.
+
+After completing your task:
+7. Write session log to \`_memory/agents/${agent.id}/YYYY-MM-DD_<task-slug>_session.md\`.
+8. Append to \`_memory/rna-method/timeline.json\` \`recentDecisions[]\` — { date, agent, decision, rationale }.
+9. Update \`_memory/rna-method/agent-context.json\` — clear resolved checkpoints, update join \`completedSteps[]\` if applicable.
+10. Output §task-complete block:
+    §task-complete(@${agent.id})
+      status:    ✅ Done | ⚠️ Partial | ❌ Blocked
+      what:      <1-2 sentences: what was delivered>
+      files:     [<created / modified paths>]
+      decisions: [<key decisions made>]
+      next-actions:
+        - [@<agent> or You] <specific action>
+      open:      [<blocker or follow-up question>]
 </agent-activation>`;
 }
 
@@ -79,10 +94,12 @@ function mkSessionStart(agent) {
 }
 
 function mkSessionEnd(agent) {
-  return `**At the end of every session:**
+  return `**At the end of every session / after every task:**
 1. Archive key decisions to \`_memory/agents/${agent.id}/YYYY-MM-DD_<task-slug>_session.md\`.
-2. Update \`_memory/rna-method/timeline.json\` — add decisions to \`knownDecisions[]\`, resolve or escalate signals.
-3. If work is incomplete: record the exact stopping point in the session log so the next session can resume.`;
+2. Append to \`_memory/rna-method/timeline.json\` \`recentDecisions[]\` — { date, agent, decision, rationale }.
+3. Update \`_memory/rna-method/agent-context.json\` — remove resolved checkpoints, update join \`completedSteps[]\` if in a join.
+4. If work is incomplete: record the exact stopping point in the session log so the next session can resume.
+5. Output §task-complete block: status · what · files · decisions · next-actions · open.`;
 }
 
 // ─── Per-agent rich body sections ─────────────────────────────────────────────

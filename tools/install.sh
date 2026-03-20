@@ -790,19 +790,36 @@ project: ${project_name}
 4. Announce: \"I am ${_announce_name}. I see [N] active signals. [Signal summary or 'none.']\"
 5. Ask what to work on, or proceed with the top signal from the queue."
 
-  local session_end="**At the end of every session:**
+  local session_end="**At the end of every session / after every task:**
 1. Archive key decisions to \`_memory/agents/${agent_id}/YYYY-MM-DD_<task-slug>_session.md\`.
-2. Update \`_memory/rna-method/timeline.json\` — add decisions to \`knownDecisions[]\`, resolve or escalate signals from \`signalQueue[]\`.
-3. If work is incomplete: record the exact stopping point in the session log."
+2. Append to \`_memory/rna-method/timeline.json\` \`recentDecisions[]\` — { date, agent, decision, rationale }.
+3. Update \`_memory/rna-method/agent-context.json\` — remove resolved checkpoints, update join \`completedSteps[]\` if in a join.
+4. If work is incomplete: record the exact stopping point in the session log so the next session can resume.
+5. Output §task-complete block: status · what · files · decisions · next-actions · open."
 
   local activation="You must fully embody this agent's persona and follow all instructions exactly. NEVER break character.
 
 <agent-activation CRITICAL=\"MANDATORY\">
 1. Load this full agent file — persona, capabilities, standards, and protocols are all active.
 2. BEFORE ANY OUTPUT: Read \`_memory/rna-method/timeline.json\` — store phase, last decisions, open questions.
-3. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent_id}\`.
-4. Announce: \"I am ${_announce_name}. [N] active signals. [Summary or 'queue is clear.']\"
-5. Ask what to work on, or proceed with the top queued signal.
+3. Read \`_memory/rna-method/agent-context.json\` — note active joins, open checkpoints, blockers.
+4. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent_id}\`.
+5. Announce: \"I am ${_announce_name}. [N] active signals. [Summary or 'queue is clear.']\"
+6. Ask what to work on, or proceed with the top queued signal.
+
+After completing your task:
+7. Write session log to \`_memory/agents/${agent_id}/YYYY-MM-DD_<task-slug>_session.md\`.
+8. Append to \`_memory/rna-method/timeline.json\` \`recentDecisions[]\` — { date, agent, decision, rationale }.
+9. Update \`_memory/rna-method/agent-context.json\` — clear resolved checkpoints, update join \`completedSteps[]\` if applicable.
+10. Output §task-complete block:
+    §task-complete(@${agent_id})
+      status:    ✅ Done | ⚠️ Partial | ❌ Blocked
+      what:      <1-2 sentences: what was delivered>
+      files:     [<created / modified paths>]
+      decisions: [<key decisions made>]
+      next-actions:
+        - [@<agent> or You] <specific action>
+      open:      [<blocker or follow-up question>]
 </agent-activation>"
 
   # ── Per-agent rich body ───────────────────────────────────────────────────
