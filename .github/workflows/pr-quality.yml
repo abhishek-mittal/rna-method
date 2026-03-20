@@ -1,0 +1,101 @@
+name: PR Quality Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  fork-check:
+    name: Require fork-based PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check HEAD repo is a fork
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+        run: |
+          if [ "$HEAD_REPO" = "$BASE_REPO" ]; then
+            echo "::error::PRs must originate from a personal fork, not from a branch on the upstream repo."
+            echo "::error::See CONTRIBUTING.md — 'Fork-only Contribution Workflow' section."
+            exit 1
+          fi
+          echo "✓ PR originates from a fork: $HEAD_REPO"
+
+  validate-schema:
+    name: Validate JSON files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate all JSON files in schema/
+        run: |
+          for f in schema/*.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" && echo "✓ $f" || (echo "✗ $f is invalid JSON" && exit 1)
+          done
+
+      - name: Validate all JSON files in templates/
+        run: |
+          find templates/ -name '*.json' | while read f; do
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" && echo "✓ $f" || (echo "✗ $f is invalid JSON" && exit 1)
+          done
+
+      - name: Validate all JSON files in examples/
+        run: |
+          find examples/ -name '*.json' | while read f; do
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8'))" && echo "✓ $f" || (echo "✗ $f is invalid JSON" && exit 1)
+          done
+
+  validate-registry:
+    name: Registry health check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run validate-registry.js
+        run: |
+          node tools/validate-registry.js --json 2>&1
+          echo "::notice::Registry validation passed"
+
+  rna-commands-check:
+    name: Verify rna-commands.js is executable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Smoke test rna-commands.js
+        run: node tools/rna-commands.js /rna.help
+
+  check-pr-description:
+    name: PR description completeness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required sections present
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          MISSING=""
+          echo "$PR_BODY" | grep -qi "what changed" || MISSING="$MISSING 'What changed'"
+          echo "$PR_BODY" | grep -qi "why" || MISSING="$MISSING 'Why'"
+          echo "$PR_BODY" | grep -qi "testing" || MISSING="$MISSING 'Testing evidence'"
+          if [ -n "$MISSING" ]; then
+            echo "::error::PR description is missing required sections:$MISSING"
+            echo "::error::Copy the PR template from .github/pull_request_template.md and fill in all sections."
+            exit 1
+          fi
+          echo "✓ PR description contains all required sections"

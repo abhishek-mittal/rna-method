@@ -7,6 +7,35 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.1.0] — 2026-03-20
+
+### Added
+- `/rna.*` in-session command system — 9 agent-level commands: `setup`, `update`, `resync`, `signal`, `status`, `compact`, `gui`, `version`, `help`
+- `tools/rna-commands.js` — CLI router implementing all `/rna.*` commands (pure Node.js, no deps)
+- `tools/version-bump.js` — semver release tool; updates `schema/rna-schema.json.rnaVersion` and prepends `CHANGELOG.md` entry
+- `docs/rna-commands.md` — full command spec and platform-agnostic agent instruction block
+- `docs/context-compaction.md` — context compaction protocol with session summary format and `timeline.json.lastSession` spec
+- `schema/rna-schema.json` — added `rnaVersion` top-level field for schema-level versioning separate from `version`
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1 with 4-level enforcement ladder
+- `SECURITY.md` — private disclosure protocol (48h ack, 30d fix), path traversal + malicious schema injection as in-scope
+- `CONTRIBUTING.md` — fork-only contributor workflow, Conventional Commits convention, PR requirements, tools reference
+- `.github/pull_request_template.md` — three-section PR template (What changed / Why / Testing evidence)
+- `.github/ISSUE_TEMPLATE/bug_report.yml` — YAML-format bug report with dropdown component picker
+- `.github/ISSUE_TEMPLATE/feature_request.yml` — YAML-format feature request template
+- `.github/workflows/pr-quality.yml` — 5-job PR quality workflow: fork check, JSON lint, registry validation, rna-commands smoke test, PR description check
+- `.github/agents/rna-maintainer.agent.md` — release and review agent with adapter checklist, PR decision tree, and release protocol
+- `.github/agents/rna-validator.agent.md` — schema compliance and adapter quality agent with full validation suite
+
+### Changed
+- `CONTRIBUTING.md` — versioning section updated to reference `tools/version-bump.js` and Conventional Commits
+- `.github/ISSUE_TEMPLATE/bug-report.md` → superseded by `bug_report.yml` (YAML format)
+
+### Research
+- RNA Studio v1 shipped with live canvas, SSE pipeline, and full agent animation system (see `studio/`)
+- Director/base-agent split: `_base-agent` is now the shared foundation tier across all agent collectives
+
+---
+
 ## [1.0.0] — 2026-03-08
 
 ### Added

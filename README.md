@@ -79,6 +79,20 @@ Your AI editor loads the Developer agent's identity, rules, and protocols automa
 
 ---
 
+## `_base-agent` — Foundation Encapsulation
+
+Every RNA collective has a hidden layer: the **shared behavioral contracts** every agent must honor — handoff format, checkpoint rules, memory conventions, persona, limits. RNA Method makes this explicit through `_base-agent`.
+
+`_base-agent` is a **foundation template** — all specialized agents declare `[inherits: _base-agent]` and only override what makes them different. It is **never invoked directly** by humans.
+
+The human entry point is the **Director** agent. Every RNA collective should have one agent marked `isPrimaryDirector: true`. The Director is the only agent humans invoke — it orchestrates all join patterns and agent activation.
+
+In the RNA Studio canvas, `_base-agent` appears anchored below the agent orbit — amber, dashed-bordered, labeled `§base`, with a footer reading *"base encapsulation — not invoked directly"*. The Director node is highlighted with a crown (👑) and a `§director` tier badge.
+
+→ Full explainer: [docs/base-agent-signal-hub.md](docs/base-agent-signal-hub.md)
+
+---
+
 ## Architecture
 
 ```
@@ -145,7 +159,13 @@ rna-method/
 │   ├── rules/                       # Standalone reusable rules
 │   └── joins/                       # Joining pattern documentation
 │
+├── studio/
+│   ├── src/                         # Vite 6 + React 19 + TypeScript source
+│   ├── dist/                        # Built assets (served by server.js)
+│   └── server.js                    # Pure-Node SSE server (port 7337)
+│
 ├── tools/
+│   ├── init.js                      # Node.js questionnaire (multi-adapter)
 │   └── validate-registry.js         # Registry health checker
 │
 ├── docs/
@@ -153,6 +173,8 @@ rna-method/
 │   ├── schema-reference.md
 │   ├── cross-platform-guide.md
 │   ├── failure-modes.md
+│   ├── base-agent-signal-hub.md     # _base-agent explainer
+│   ├── rna-folder-architecture.md   # .rna/ folder design + roadmap
 │   └── research-paper.md
 │
 ├── examples/
@@ -179,13 +201,79 @@ rna-method/
 
 Joining patterns are multi-agent pipelines where agents hand off work to each other:
 
-| Pattern | Agents | Use when |
-|---|---|---|
-| `research-to-content` | researcher → developer | Implementation requires prior research |
-| `design-to-build` | developer → reviewer | Standard PR review cycle |
-| `full-pipeline` | architect → developer → reviewer | Complex features requiring upfront design |
+| Pattern | ID | Agents | Use when |
+|---|---|---|---|
+| Research-to-Content | `rtc` | researcher → developer | Implementation requires prior research |
+| Design-to-Build | `dtb` | developer → reviewer → developer | Standard PR review cycle |
+| Full Feature | `ff` | director → researcher → developer → reviewer | Complex features requiring upfront design |
+| Continuous Dev Cycle | `cdc` | conductor → developer → [reviewer →] conductor | Ticket-to-PR pipeline |
+| R&D Synthesis | `rds` | lab → [researcher →] [lab →] [curator] | Deep research + synthesis |
 
 See [templates/joins/](templates/joins/) for complete handoff protocol documentation.
+
+---
+
+## RNA Studio
+
+RNA Studio is a visual canvas for your agent collective — see who is active, which joins are in progress, and inspect agent capabilities.
+
+```bash
+# From your project root (after init)
+npm run rna:studio
+# Opens at http://localhost:7337
+```
+
+Features:
+- **Live agent graph** — React Flow canvas with tier-based colors and animated edges
+- **Jira-style status lozenges** — In Progress (blue spinner) and Pending (amber pulse) badges on active agent nodes
+- **Director node** — Crown (👑) + `§director` badge + green "● human entry point" indicator
+- **Base substrate** — `_base-agent` anchored below the orbit with dashed border and `§base` badge
+- **Live activity** — agents write `_memory/agents/<id>/activity.json`; studio SSE-streams changes in real time
+- **Join panels** — signal console, memory browser, schema explorer, platform switcher
+
+→ Source: `studio/` — Vite 6 + React 19 + TypeScript, served by a pure-Node SSE server on port 7337
+
+---
+
+## `.rna/` — Project-Scoped Config
+
+After running `init`, a `.rna/config.json` is written at your project root:
+
+```json
+{
+  "projectName": "my-project",
+  "adapter": "copilot",
+  "adapters": ["copilot", "cursor"],
+  "studioPort": 7337,
+  "rnaVersion": "1.0.0",
+  "installedAt": "2026-03-20T00:00:00.000Z"
+}
+```
+
+The questionnaire supports **multi-adapter selection** — choose a primary platform and optionally generate for additional platforms in the same run. `.rna/config.json` records all active adapters.
+
+---
+
+## Live Agent Activity Protocol
+
+Agents can report their own status by writing to `_memory/agents/<agentId>/activity.json`:
+
+```json
+{
+  "agentId": "samba",
+  "status": "in-progress",
+  "currentTask": "Implement animated edge system",
+  "currentJoinId": "ff-2026-03-20-canvas",
+  "updatedAt": "2026-03-20T12:00:00.000Z",
+  "signals": [
+    { "type": "checkpoint", "message": "Edge colors done, starting markers", "ts": "2026-03-20T11:45:00.000Z" }
+  ]
+}
+```
+
+The RNA Studio server watches `_memory/agents/` recursively and SSE-broadcasts changes. Agent-written `activity.json` takes precedence over orchestrator-derived `activeJoins` state.
+
+**Valid status values:** `in-progress` | `pending` | `idle`
 
 ---
 
@@ -214,6 +302,8 @@ The validator checks that all agent files, skill files, rule files, and hook tar
 - [Schema Reference](docs/schema-reference.md) — Every field explained
 - [Cross-Platform Guide](docs/cross-platform-guide.md) — Platform-specific behaviors and trade-offs
 - [Failure Modes](docs/failure-modes.md) — Known failure patterns and fixes
+- [Base Agent & Signal Hub](docs/base-agent-signal-hub.md) — `_base-agent` as foundation encapsulation
+- [RNA Folder Architecture](docs/rna-folder-architecture.md) — `.rna/` folder design and roadmap
 - [Research Paper](docs/research-paper.md) — Theory and design rationale
 
 ---

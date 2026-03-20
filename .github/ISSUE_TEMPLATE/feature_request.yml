@@ -1,0 +1,71 @@
+name: Feature Request
+description: Propose a new adapter, command, joining pattern, rule, or other enhancement
+title: "[feat] "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature request, please check if a similar one already exists.
+        For new **platform adapters**, use `adapter-request.md` instead.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature category
+      options:
+        - "New joining pattern"
+        - "New schema field"
+        - "New tool / CLI command"
+        - "New rule template"
+        - "/rna.* command enhancement"
+        - "Studio (RNA Studio) feature"
+        - "Documentation improvement"
+        - "CI / automation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What limitation or pain point does this solve? Be specific.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to see. Include example config, schema fields, or command syntax if relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or other approaches did you consider?
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: How would you verify this feature is working correctly?
+      placeholder: |
+        - [ ] `node tools/validate-registry.js` passes with the new field
+        - [ ] The adapter generates the correct native config
+        - [ ] Docs updated in `docs/schema-reference.md`
+
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is a feature request, not a bug (use `bug_report.yml` for that).
+          required: true

@@ -4,6 +4,7 @@
   "title": "RNA + Pluribus Agent Collective Schema",
   "description": "Platform-neutral schema for defining multi-agent orchestration with Reusable Neural Activators (RNA). This schema is the canonical format; per-platform adapters generate native configuration files.",
   "version": "1.0.0",
+  "rnaVersion": "1.1.0",
   "meta": {
     "director": "Director",
     "projectName": "my-project",

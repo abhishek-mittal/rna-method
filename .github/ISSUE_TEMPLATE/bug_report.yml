@@ -1,0 +1,120 @@
+name: Bug Report
+description: Report a bug in an adapter, tool, or template
+title: "[bug] "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in every section — incomplete reports may be closed without investigation.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of RNA Method is affected?
+      options:
+        - "Adapter — Cursor"
+        - "Adapter — GitHub Copilot"
+        - "Adapter — Claude Code"
+        - "Adapter — OpenAI Codex"
+        - "Adapter — Kimi Code"
+        - "Adapter — other"
+        - "Tool — validate-registry.js"
+        - "Tool — init.js"
+        - "Tool — rna-commands.js"
+        - "Tool — version-bump.js"
+        - "Template — minimal-collective"
+        - "Template — full-collective"
+        - "Template — rules"
+        - "Template — joins"
+        - "Schema — rna-schema.json"
+        - "Docs"
+        - "Studio (RNA Studio)"
+    validations:
+      required: true
+
+  - type: input
+    id: specific-file
+    attributes:
+      label: Specific file path
+      description: e.g. `adapters/cursor/cursor-adapter.js`, `tools/validate-registry.js`
+      placeholder: adapters/...
+
+  - type: input
+    id: platform
+    attributes:
+      label: AI editor + version
+      description: e.g. Cursor 0.43, GitHub Copilot in VS Code 1.90, Claude Code 1.0
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Run `node --version`
+      placeholder: "v20.x.x"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "macOS 14.x / Ubuntu 22.04 / Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly and concisely.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `node tools/init.js`
+        2. Choose the "full-collective" template
+        3. See error in terminal
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro-config
+    attributes:
+      label: Minimal rna-schema.json (if applicable)
+      description: Paste a stripped-down version that still triggers the bug.
+      render: json
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error output / stack trace
+      render: shell
+
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am using a fork and not committing directly to the upstream repo.
+          required: true
+        - label: This is a bug, not a feature request (use `feature-request.yml` for that).
+          required: true
