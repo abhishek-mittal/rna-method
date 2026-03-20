@@ -326,8 +326,9 @@ function serveStatic(req, res) {
   } catch {
     // SPA fallback: serve index.html for client-side routing
     try {
+      const indexData = fs.readFileSync(path.join(DIST, 'index.html'));
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(fs.readFileSync(path.join(DIST, 'index.html')));
+      res.end(indexData);
     } catch {
       res.writeHead(503, { 'Content-Type': 'text/plain' });
       res.end('RNA Studio has not been built yet. Run: npm run build inside open-source/rna-method/studio/');
