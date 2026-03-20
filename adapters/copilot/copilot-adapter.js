@@ -41,12 +41,13 @@ function ensureDir(dir) {
 // ─── Agent file template helpers ─────────────────────────────────────────────
 
 function mkFrontmatter(agent) {
-  const triggerCmd = agent.command ? agent.command : `@${agent.id}`;
+  const effectiveName = (agent.name || agent.id).toLowerCase();
+  const triggerCmd = agent.command ? agent.command : `@${effectiveName}`;
   const tools = ['read', 'edit', 'search', 'execute'];
   const capsStr = (agent.matchCategories || []).join(', ') || agent.role;
   return [
     '---',
-    `name: "${agent.id}"`,
+    `name: "${effectiveName}"`,
     `description: "${agent.role} — ${capsStr}"`,
     `trigger: "${triggerCmd} <task>"`,
     'tools:',

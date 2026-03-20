@@ -22,6 +22,7 @@
 #   --project-name=<name>
 #   --stack=<language>           (e.g. TypeScript)
 #   --framework=<framework>      (e.g. Next.js)
+#   --director-name=<name>       (persona name for the director agent, e.g. Abhishek)
 #   --output=<dir>               (default: current directory)
 #   --non-interactive
 #   --dry-run                    (print what would be written, write nothing)
@@ -90,6 +91,7 @@ RULES_FLAG=""
 PROJECT_FLAG=""
 STACK_FLAG=""
 FRAMEWORK_FLAG=""
+DIRECTOR_NAME_FLAG=""
 OUTPUT_FLAG=""
 
 for arg in "$@"; do
@@ -104,6 +106,7 @@ for arg in "$@"; do
     --project-name=*)     PROJECT_FLAG="${arg#--project-name=}" ;;
     --stack=*)            STACK_FLAG="${arg#--stack=}" ;;
     --framework=*)        FRAMEWORK_FLAG="${arg#--framework=}" ;;
+    --director-name=*)    DIRECTOR_NAME_FLAG="${arg#--director-name=}" ;;
     --output=*)           OUTPUT_FLAG="${arg#--output=}" ;;
     --help|-h)
       sed -n '2,30p' "${BASH_SOURCE[0]:-$0}" | grep '^#' | sed 's/^# \{0,1\}//'
@@ -527,6 +530,7 @@ platform: ${platform}
 | Platform  | ${platform}              |
 | Stack     | ${stack} / ${framework}  |
 | Agents    | ${agents_json}           |
+| Director  | ${FINAL_DIRECTOR_NAME}   |
 | Init date | ${ts}                    |
 
 ## Activate your first agent
@@ -628,6 +632,7 @@ write_timeline_json() {
       \"language\": \"${stack}\",
       \"framework\": \"${framework}\"
     },
+    \"directorName\": \"${FINAL_DIRECTOR_NAME}\",
     \"currentPhase\": \"setup\"
   },
   \"sessions\": []
@@ -690,7 +695,7 @@ write_cursor_registry() {
 See \`.cursor/agents/\` for individual agent definitions.
 
 To invoke an agent, mention it by name:
-\`@developer\`, \`@reviewer\`, \`@architect\`, \`@researcher\`, \`@ops\`, \`@director\`
+\`@developer\`, \`@reviewer\`, \`@architect\`, \`@researcher\`, \`@ops\`, \`@${FINAL_DIRECTOR_NAME,,}\`
 "
   ensure_dir "${cursor_dir}/agents"
   ensure_dir "${cursor_dir}/rules"
@@ -731,9 +736,11 @@ write_agent_file() {
   local platform="$4"
 
   local filename=""
+  local _effective_id="$agent_id"
+  [[ "$agent_id" == "director" ]] && _effective_id="${FINAL_DIRECTOR_NAME,,}"
   case "$platform" in
-    copilot) filename="${dir}/${agent_id}.agent.md" ;;
-    cursor)  filename="${dir}/${agent_id}.md" ;;
+    copilot) filename="${dir}/${_effective_id}.agent.md" ;;
+    cursor)  filename="${dir}/${_effective_id}.md" ;;
     *)       return ;;
   esac
 
@@ -753,9 +760,9 @@ write_agent_file() {
         *)          role="${agent_id^} Agent";              caps=""; cmd="/@${agent_id}" ;;
       esac
       frontmatter="---
-name: \"${agent_id}\"
+name: \"${_effective_id}\"
 description: \"${role} — ${caps}\"
-trigger: \"${cmd} <task>\"
+trigger: \"@${_effective_id} <task>\"
 tools:
   - read
   - edit
@@ -773,11 +780,14 @@ project: ${project_name}
 
   # ── Per-agent session protocol (shared) ───────────────────────────────────
 
+  local _announce_name="${agent_id^}"
+  [[ "$agent_id" == "director" ]] && _announce_name="${FINAL_DIRECTOR_NAME}"
+
   local session_start="**At the start of every session:**
 1. Read \`_memory/rna-method/timeline.json\` — find the current phase and any active signals assigned to you.
 2. Read \`_memory/rna-method/receptors.json\` — check active routes that include \`${agent_id}\`.
 3. Scan \`_memory/agents/${agent_id}/\` for the most recent session log.
-4. Announce: \"I am ${agent_id^}. I see [N] active signals. [Signal summary or 'none.']\"
+4. Announce: \"I am ${_announce_name}. I see [N] active signals. [Signal summary or 'none.']\"
 5. Ask what to work on, or proceed with the top signal from the queue."
 
   local session_end="**At the end of every session:**
@@ -791,7 +801,7 @@ project: ${project_name}
 1. Load this full agent file — persona, capabilities, standards, and protocols are all active.
 2. BEFORE ANY OUTPUT: Read \`_memory/rna-method/timeline.json\` — store phase, last decisions, open questions.
 3. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent_id}\`.
-4. Announce: \"I am ${agent_id^}. [N] active signals. [Summary or 'queue is clear.']\"
+4. Announce: \"I am ${_announce_name}. [N] active signals. [Summary or 'queue is clear.']\"
 5. Ask what to work on, or proceed with the top queued signal.
 </agent-activation>"
 
@@ -808,7 +818,7 @@ You are **Developer**, the full-stack implementation agent for this project.
 
 **Your domain:** \`app/\`, \`lib/\`, \`api/\`, \`components/\`, \`scripts/\`, \`tests/\`
 **Your primary output:** working, tested, production-ready code
-**Your escalation path:** \`@architect\` for design decisions · \`@reviewer\` for PR review · \`@director\` for blockers
+**Your escalation path:** \`@architect\` for design decisions · \`@reviewer\` for PR review · \`@${FINAL_DIRECTOR_NAME,,}\` for blockers
 
 ---
 
@@ -867,7 +877,7 @@ You are **Reviewer**, the code review and security analysis agent for this proje
 
 **Your domain:** All code before it merges to \`main\`. Static analysis, pattern review, security gate.
 **Your primary output:** structured review findings — blockers, warnings, and suggestions
-**Your escalation path:** \`@architect\` for design issues · \`@director\` for policy violations
+**Your escalation path:** \`@architect\` for design issues · \`@${FINAL_DIRECTOR_NAME,,}\` for policy violations
 
 ---
 
@@ -931,7 +941,7 @@ You are **Architect**, the system design and technical strategy agent for this p
 
 **Your domain:** Architecture decisions, API contracts, data models, schema design, optimization strategy, technology choices.
 **Your primary output:** Architecture Decision Records (ADRs), design documents, schema definitions, optimization roadmaps.
-**Your escalation path:** \`@director\` for resource/priority decisions · \`@developer\` to validate implementability
+**Your escalation path:** \`@${FINAL_DIRECTOR_NAME,,}\` for resource/priority decisions · \`@developer\` to validate implementability
 
 ---
 
@@ -1017,11 +1027,11 @@ ${session_end}"
       ;;
 
     director)
-      body="# Director — Director / Orchestrator
+      body="# ${FINAL_DIRECTOR_NAME} — Director / Orchestrator
 
 ## Identity
 
-You are **Director**, the orchestration and coordination agent for this project.
+You are **${FINAL_DIRECTOR_NAME}**, the orchestration and coordination agent for this project.
 
 **Your domain:** Sprint planning, agent coordination, joining pipeline management, blocker resolution, and strategic decisions.
 **Your primary output:** Sprint plans, join activation commands, escalation resolutions, project-state updates.
@@ -1081,7 +1091,7 @@ You are **Ops**, the operations and automation agent for this project.
 
 **Your domain:** Infrastructure, automation scripts, deployment, status reports, routine maintenance, metrics collection.
 **Your primary output:** Automation scripts, deployment procedures, status summaries, incident reports.
-**Your escalation path:** \`@director\` for policy decisions · \`@developer\` for application-code changes
+**Your escalation path:** \`@${FINAL_DIRECTOR_NAME,,}\` for policy decisions · \`@developer\` for application-code changes
 
 ---
 
@@ -1300,6 +1310,13 @@ main() {
     [[ "$ARROW_SELECT_RESULT" == "yes" ]] && include_joins=true
   fi
 
+  # Director personal name (only asked if director agent is selected)
+  FINAL_DIRECTOR_NAME="Director"
+  if printf '%s\n' "${selected_agents[@]}" | grep -q '^director$'; then
+    ask_input "Director agent name?" "Director" "$DIRECTOR_NAME_FLAG"
+    FINAL_DIRECTOR_NAME="$ASK_RESULT"
+  fi
+
   # ── Section 3: Stack & Output ─────────────────────────────────────────────
 
   echo ""
@@ -1323,6 +1340,9 @@ main() {
   printf "  Project  : $(c_cyan "$FINAL_PROJECT_NAME")\n"
   printf "  Platform : $(c_cyan "$FINAL_PLATFORM")\n"
   printf "  Agents   : $(c_cyan "$agents_csv")\n"
+  if printf '%s\n' "${selected_agents[@]}" | grep -q '^director$'; then
+    printf "  Director : $(c_cyan "$FINAL_DIRECTOR_NAME")\n"
+  fi
   printf "  Rules    : $(c_cyan "$rules_csv")\n"
   printf "  Joins    : $(c_cyan "$include_joins")\n"
   printf "  Stack    : $(c_cyan "$FINAL_STACK") / $(c_cyan "$FINAL_FRAMEWORK")\n"

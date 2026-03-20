@@ -54,7 +54,7 @@ function generateAgents(schema, outDir) {
   ];
 
   schema.agents.forEach((agent, i) => {
-    const filename = `${agent.id}.md`;
+    const filename = `${(agent.name || agent.id).toLowerCase()}.md`;
     const content = [
       '---',
       `description: "${agent.role} — ${agent.persona}"`,
@@ -165,7 +165,7 @@ function generateCommands(schema, outDir) {
       '',
       `# /${cmd.id} — ${agent ? agent.name : 'Unknown'} (${agent ? agent.role : 'Unknown'})`,
       '',
-      `Read \`.cursor/agents/${agent ? agent.id : 'unknown'}.md\` and follow its instructions completely.`,
+      `Read \`.cursor/agents/${agent ? (agent.name || agent.id).toLowerCase() : 'unknown'}.md\` and follow its instructions completely.`,
       '',
       `Then execute the user's task. If no specific task is given, ask what to do.`
     ].join('\n');

@@ -24,6 +24,7 @@
  *   --project-name=<name>
  *   --stack=<language>                  (e.g. TypeScript)
  *   --framework=<framework>             (e.g. Next.js)
+ *   --director-name=<name>              (persona name for the director agent, e.g. Abhishek)
  *   --output=<dir>                      (default: cwd)
  *   --non-interactive                   (accept defaults; combine with other flags)
  */
@@ -61,9 +62,10 @@ const COLLECTIVE_FLAG = flag('collective');
 const AGENTS_FLAG     = flag('agents');
 const RULES_FLAG      = flag('rules');
 const PROJECT_FLAG    = flag('project-name');
-const STACK_FLAG      = flag('stack');
-const FRAMEWORK_FLAG  = flag('framework');
-const OUTPUT_FLAG     = flag('output');
+const STACK_FLAG        = flag('stack');
+const FRAMEWORK_FLAG    = flag('framework');
+const DIRECTOR_NAME_FLAG = flag('director-name');
+const OUTPUT_FLAG       = flag('output');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -578,6 +580,12 @@ async function main() {
     ? (await arrowSelect('Include joining (multi-agent pipeline) patterns?', ['yes', 'no'], 0)).startsWith('yes')
     : false;
 
+  // Director agent name (personalise the director persona and @handle)
+  let directorName = 'Director';
+  if (selectedAgents.includes('director')) {
+    directorName = await ask('Director agent name?', 'Director', DIRECTOR_NAME_FLAG);
+  }
+
   console.log('');
   console.log(c('bold', '  ── ③ Stack & Output ────────────────────────────────'));
 
@@ -593,6 +601,9 @@ async function main() {
   console.log(`  Agents   : ${c('cyan', selectedAgents.join(', '))}`);
   console.log(`  Rules    : ${c('cyan', selectedRules.length ? selectedRules.join(', ') : '(none)')}`);
   console.log(`  Joins    : ${c('cyan', String(includeJoins))}`);
+  if (selectedAgents.includes('director')) {
+    console.log(`  Director : ${c('cyan', directorName)}`);
+  }
   console.log(`  Stack    : ${c('cyan', techStack)} / ${c('cyan', framework)}`);
   console.log(`  Output   : ${c('cyan', outputDir)}`);
   console.log('');
@@ -636,6 +647,10 @@ async function main() {
   if (!includeJoins)      schema.joiningPatterns = [];
   if (!selectedAgents.includes('director')) delete schema.director;
 
+  // Patch director display name in schema (flows through to agent body via adapter)
+  const schemaDirector = schema.agents?.find(a => a.id === 'director');
+  if (schemaDirector) schemaDirector.name = directorName;
+
   const receptors = JSON.parse(rawReceptors);
   if (receptors.meta) {
     receptors.meta.projectName = projectName;
@@ -643,11 +658,14 @@ async function main() {
   }
   if (receptors.agents) {
     receptors.agents = receptors.agents.filter(a => selectedAgents.includes(a.id));
+    const receptorDirector = receptors.agents.find(a => a.id === 'director');
+    if (receptorDirector) receptorDirector.name = directorName;
   }
 
   const timeline = JSON.parse(rawTimeline);
   if (timeline.meta)         timeline.meta.projectName     = projectName;
   if (timeline.projectState) timeline.projectState.techStack = { language: techStack, framework };
+  if (timeline.projectState && selectedAgents.includes('director')) timeline.projectState.directorName = directorName;
 
   // ── Phase 4: Write _memory/ files ─────────────────────────────────────────
 
