@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+studio/node_modules/
+
+# Build artifacts (intentionally kept: studio/dist IS committed so the server works without a build step)
+studio/tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local

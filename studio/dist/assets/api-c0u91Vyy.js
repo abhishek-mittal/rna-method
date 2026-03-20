@@ -1,0 +1,1 @@
+const i=t=>fetch(t).then(a=>a.json()),e={agents:()=>i("/api/agents"),agentActivity:()=>i("/api/agent-activity"),context:()=>i("/api/context"),timeline:()=>i("/api/timeline"),memory:()=>i("/api/memory"),memoryFile:t=>i(`/api/memory/${t}`),joins:()=>i("/api/joins"),platforms:()=>i("/api/platforms"),rnaConfig:()=>i("/api/rna-config")};export{e as a};
