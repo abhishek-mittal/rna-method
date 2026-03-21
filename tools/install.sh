@@ -766,15 +766,117 @@ write_agent_file() {
         ops)        role="Operator / Automation Specialist"; caps="daily-ops, automation, status-reports";      cmd="/ops" ;;
         *)          role="${agent_id^} Agent";              caps=""; cmd="/@${agent_id}" ;;
       esac
+      # Role-appropriate tools using VS Code Copilot's group/toolname format
+      local tools_yaml=""
+      case "$agent_id" in
+        developer)
+          tools_yaml="  - edit/editFiles
+  - edit/createFile
+  - edit/createDirectory
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - search/changes
+  - execute/runInTerminal
+  - execute/runTests
+  - execute/runTask
+  - read/terminalLastCommand
+  - web/fetch
+  - github/get_file_contents
+  - github/list_branches
+  - github/create_branch
+  - github/create_pull_request
+  - github/issue_read
+  - github/list_issues" ;;
+        reviewer)
+          tools_yaml="  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/pull_request_read
+  - github/pull_request_review_write
+  - github/search_code
+  - github/issue_read
+  - github/list_pull_requests
+  - github/get_file_contents
+  - github/list_commits" ;;
+        architect)
+          tools_yaml="  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/get_file_contents
+  - github/search_code
+  - github/issue_read
+  - io.github.upstash/context7/get-library-docs
+  - io.github.upstash/context7/resolve-library-id" ;;
+        researcher)
+          tools_yaml="  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/search_code
+  - github/get_file_contents
+  - github/search_repositories
+  - io.github.upstash/context7/get-library-docs
+  - io.github.upstash/context7/resolve-library-id" ;;
+        director)
+          tools_yaml="  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - search/changes
+  - web/fetch
+  - web/githubRepo
+  - agent/runSubagent
+  - github/issue_read
+  - github/issue_write
+  - github/list_issues
+  - github/create_pull_request
+  - github/list_branches" ;;
+        ops)
+          tools_yaml="  - read/readFile
+  - edit/editFiles
+  - edit/createFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - read/problems
+  - read/terminalLastCommand
+  - execute/runInTerminal
+  - execute/runTask
+  - web/fetch
+  - github/issue_read
+  - github/list_issues
+  - github/get_file_contents" ;;
+        *)
+          tools_yaml="  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - edit/editFiles
+  - web/fetch" ;;
+      esac
       frontmatter="---
 name: \"${_effective_id}\"
 description: \"${role} — ${caps}\"
 trigger: \"@${_effective_id} <task>\"
 tools:
-  - read
-  - edit
-  - search
-  - execute
+${tools_yaml}
 ---"
       ;;
     cursor)

@@ -2,7 +2,21 @@
 name: Director
 description: Orchestration and coordination agent. Invoked for sprint planning, join pipeline management, blocker escalation, and inter-agent routing.
 trigger: @director <directive or escalation>
-alwaysApply: false
+tools:
+  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - search/changes
+  - web/fetch
+  - web/githubRepo
+  - agent/runSubagent
+  - github/issue_read
+  - github/issue_write
+  - github/list_issues
+  - github/create_pull_request
+  - github/list_branches
 ---
 
 # Director Agent

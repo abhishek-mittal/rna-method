@@ -2,7 +2,21 @@
 name: Ops
 description: Operations, automation, and status reporting agent. Invoked for infrastructure tasks, deployment scripts, status summaries, and routine maintenance.
 trigger: @ops <task or status request>
-alwaysApply: false
+tools:
+  - read/readFile
+  - edit/editFiles
+  - edit/createFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - read/problems
+  - read/terminalLastCommand
+  - execute/runInTerminal
+  - execute/runTask
+  - web/fetch
+  - github/issue_read
+  - github/list_issues
+  - github/get_file_contents
 ---
 
 # Ops Agent

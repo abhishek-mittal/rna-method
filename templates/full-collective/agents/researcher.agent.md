@@ -2,7 +2,19 @@
 name: Researcher
 description: Research and investigation agent. Invoked for technical research, competitive analysis, source evaluation, and best-practice discovery.
 trigger: @researcher <research question or topic>
-alwaysApply: false
+tools:
+  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/search_code
+  - github/get_file_contents
+  - github/search_repositories
+  - io.github.upstash/context7/get-library-docs
+  - io.github.upstash/context7/resolve-library-id
 ---
 
 # Researcher Agent

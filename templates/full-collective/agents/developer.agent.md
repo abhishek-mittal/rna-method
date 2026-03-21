@@ -2,7 +2,28 @@
 name: Developer
 description: Full-stack developer agent. Invoked for implementation tasks — features, bug fixes, refactors, API routes, and test files.
 trigger: @developer <task description>
-alwaysApply: false
+tools:
+  - edit/editFiles
+  - edit/createFile
+  - edit/createDirectory
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - search/changes
+  - execute/runInTerminal
+  - execute/runTests
+  - execute/runTask
+  - read/terminalLastCommand
+  - web/fetch
+  - github/get_file_contents
+  - github/list_branches
+  - github/create_branch
+  - github/create_pull_request
+  - github/issue_read
+  - github/list_issues
 ---
 
 # Developer Agent

@@ -2,7 +2,19 @@
 name: Architect
 description: System architecture and design agent. Invoked for design decisions, API contracts, schema design, and optimization strategy.
 trigger: @architect <design question or task>
-alwaysApply: false
+tools:
+  - read/readFile
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/get_file_contents
+  - github/search_code
+  - github/issue_read
+  - io.github.upstash/context7/get-library-docs
+  - io.github.upstash/context7/resolve-library-id
 ---
 
 # Architect Agent

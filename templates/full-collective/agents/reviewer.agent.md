@@ -2,7 +2,22 @@
 name: Reviewer
 description: Code review and security analysis agent. Invoked for PR reviews, security audits, and definition-of-done checks.
 trigger: @reviewer <pr or task description>
-alwaysApply: false
+tools:
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - github/pull_request_read
+  - github/pull_request_review_write
+  - github/search_code
+  - github/issue_read
+  - github/list_pull_requests
+  - github/get_file_contents
+  - github/list_commits
 ---
 
 # Reviewer Agent

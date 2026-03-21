@@ -40,10 +40,72 @@ function ensureDir(dir) {
 
 // ─── Agent file template helpers ─────────────────────────────────────────────
 
+// Role-appropriate tool sets using VS Code Copilot's group/toolname format.
+// These are the built-in and MCP tool identifiers that VS Code Copilot recognises
+// in .agent.md frontmatter.
+const BASE_TOOLS = [
+  'read/readFile', 'search/codebase', 'search/textSearch', 'search/fileSearch', 'web/fetch',
+];
+
+const ROLE_TOOLS = {
+  developer: [
+    ...BASE_TOOLS,
+    'edit/editFiles', 'edit/createFile', 'edit/createDirectory',
+    'read/problems', 'search/usages', 'search/changes',
+    'execute/runInTerminal', 'execute/runTests', 'execute/runTask',
+    'read/terminalLastCommand',
+    'github/get_file_contents', 'github/list_branches', 'github/create_branch',
+    'github/create_pull_request', 'github/issue_read', 'github/list_issues',
+  ],
+  reviewer: [
+    ...BASE_TOOLS,
+    'read/problems', 'search/usages', 'web/githubRepo',
+    'github/pull_request_read', 'github/pull_request_review_write',
+    'github/search_code', 'github/issue_read', 'github/list_pull_requests',
+    'github/get_file_contents', 'github/list_commits',
+  ],
+  architect: [
+    ...BASE_TOOLS,
+    'search/usages', 'web/githubRepo',
+    'github/get_file_contents', 'github/search_code', 'github/issue_read',
+    'io.github.upstash/context7/get-library-docs',
+    'io.github.upstash/context7/resolve-library-id',
+  ],
+  researcher: [
+    ...BASE_TOOLS,
+    'search/usages', 'web/githubRepo',
+    'github/search_code', 'github/get_file_contents', 'github/search_repositories',
+    'io.github.upstash/context7/get-library-docs',
+    'io.github.upstash/context7/resolve-library-id',
+  ],
+  director: [
+    ...BASE_TOOLS,
+    'search/usages', 'search/changes', 'web/githubRepo', 'agent/runSubagent',
+    'github/issue_read', 'github/issue_write', 'github/list_issues',
+    'github/create_pull_request', 'github/list_branches',
+  ],
+  ops: [
+    ...BASE_TOOLS,
+    'edit/editFiles', 'edit/createFile',
+    'read/problems', 'read/terminalLastCommand',
+    'execute/runInTerminal', 'execute/runTask',
+    'github/issue_read', 'github/list_issues', 'github/get_file_contents',
+  ],
+};
+
 function mkFrontmatter(agent) {
   const effectiveName = (agent.name || agent.id).toLowerCase();
   const triggerCmd = agent.command ? agent.command : `@${effectiveName}`;
-  const tools = ['read', 'edit', 'search', 'execute'];
+
+  // Role-appropriate tools (schema-level agent.tools overrides; agent.mcpTools appends)
+  const roleTools  = ROLE_TOOLS[agent.id] || BASE_TOOLS;
+  const schemaTools = agent.tools    || [];
+  const mcpTools    = agent.mcpTools || [];
+
+  const tools = schemaTools.length > 0
+    ? [...new Set([...schemaTools, ...mcpTools])]
+    : [...new Set([...roleTools,   ...mcpTools])];
+
   const capsStr = (agent.matchCategories || []).join(', ') || agent.role;
   return [
     '---',
