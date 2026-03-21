@@ -5,6 +5,7 @@
   import HowItWorks from './lib/HowItWorks.svelte'
   import AgentCollective from './lib/AgentCollective.svelte'
   import JoinPatterns from './lib/JoinPatterns.svelte'
+  import AgentFlow from './lib/AgentFlow.svelte'
   import PlatformSupport from './lib/PlatformSupport.svelte'
   import CodePreview from './lib/CodePreview.svelte'
   import Footer from './lib/Footer.svelte'
@@ -18,6 +19,7 @@
   <HowItWorks />
   <AgentCollective />
   <JoinPatterns />
+  <AgentFlow />
   <PlatformSupport />
   <CodePreview />
 </main>
