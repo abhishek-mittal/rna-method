@@ -830,6 +830,19 @@ async function main() {
   writef(rnaConfigPath, JSON.stringify(rnaConfig, null, 2) + '\n');
   console.log('  ✓ .rna/config.json');
 
+  // ── Phase 4.6: Copy tools/validate-registry.js ────────────────────────────
+
+  const toolsDir  = path.join(outputDir, 'tools');
+  const valDest   = path.join(toolsDir, 'validate-registry.js');
+  try {
+    const valSrc = await getFile('tools/validate-registry.js');
+    mkdirp(toolsDir);
+    writef(valDest, valSrc);
+    console.log('  ✓ tools/validate-registry.js');
+  } catch (e) {
+    console.log(c('yellow', `  ⚠ Could not copy validate-registry.js: ${e.message}`));
+  }
+
   // Token footprint
   if (!DRY_RUN) reportFootprint();
 
