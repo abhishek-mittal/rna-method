@@ -8,6 +8,15 @@
   "meta": {
     "director": "Director",
     "projectName": "my-project",
+    "description": "",
+    "domain": "",
+    "stack": {
+      "language": "TypeScript",
+      "framework": "Node.js",
+      "extras": []
+    },
+    "deploymentTarget": "local",
+    "platform": "",
     "generatedAt": "2026-03-08"
   },
   "agents": [

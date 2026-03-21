@@ -22,8 +22,11 @@
  *   --agents=<id,id,...>                (e.g. developer,reviewer,architect)
  *   --rules=<id,id,...>                 (coding-standards,security-gate,review-gate,docs-standards)
  *   --project-name=<name>
+ *   --description=<text>                (1-line project description)
+ *   --domain=<domain>                   (e.g. ecommerce, SaaS, AI research)
  *   --stack=<language>                  (e.g. TypeScript)
  *   --framework=<framework>             (e.g. Next.js)
+ *   --deploy=<target>                   (local, cloud, edge, hybrid)
  *   --director-name=<name>              (persona name for the director agent, e.g. Abhishek)
  *   --studio=<true|false>               (enable RNA Studio dashboard)
  *   --studio-port=<port>                (default: 7337)
@@ -64,8 +67,11 @@ const COLLECTIVE_FLAG = flag('collective');
 const AGENTS_FLAG     = flag('agents');
 const RULES_FLAG      = flag('rules');
 const PROJECT_FLAG    = flag('project-name');
+const DESCRIPTION_FLAG  = flag('description');
+const DOMAIN_FLAG       = flag('domain');
 const STACK_FLAG        = flag('stack');
 const FRAMEWORK_FLAG    = flag('framework');
+const DEPLOY_FLAG       = flag('deploy');
 const DIRECTOR_NAME_FLAG = flag('director-name');
 const OUTPUT_FLAG       = flag('output');
 const STUDIO_FLAG       = flag('studio');
@@ -419,7 +425,7 @@ function reportFootprint() {
 
 // ─── Session-zero Builder ─────────────────────────────────────────────────────
 
-function buildSessionZero({ projectName, platform, selectedAgents, techStack, framework }) {
+function buildSessionZero({ projectName, description, domain, platform, selectedAgents, techStack, framework, deployTarget }) {
   const ts = new Date().toISOString();
   const agentList = selectedAgents.join(', ');
   return `---
@@ -433,13 +439,16 @@ platform: ${platform}
 
 ## What this project uses
 
-| Field     | Value                    |
-|-----------|---------------------------|
-| Project   | ${projectName}           |
-| Platform  | ${platform}              |
-| Stack     | ${techStack} / ${framework} |
-| Agents    | ${agentList}             |
-| Init date | ${ts}                    |
+| Field       | Value                      |
+|-------------|-----------------------------|
+| Project     | ${projectName}             |
+| Description | ${description || '—'}      |
+| Domain      | ${domain || '—'}           |
+| Platform    | ${platform}                |
+| Stack       | ${techStack} / ${framework}|
+| Deploy      | ${deployTarget || 'local'} |
+| Agents      | ${agentList}               |
+| Init date   | ${ts}                      |
 
 ## Activate your first agent
 
@@ -520,6 +529,29 @@ async function main() {
   console.log(c('bold', '  ── ① Project Identity ──────────────────────────────'));
 
   const projectName = await ask('Project name?', cwdName, PROJECT_FLAG);
+
+  const projectDescription = await ask(
+    'One-line project description?',
+    `${cwdName} — built with RNA Method`,
+    DESCRIPTION_FLAG
+  );
+
+  const domainChoice = await arrowSelect(
+    'Project domain?',
+    [
+      'web-app     — web application (SaaS, dashboard, portal)',
+      'api         — backend API / microservice',
+      'ecommerce   — online store / marketplace',
+      'ai-ml       — AI/ML project (training, inference, agents)',
+      'mobile      — mobile app (React Native, Flutter, etc.)',
+      'cli-tool    — command-line tool / automation',
+      'library     — reusable library / SDK / package',
+      'other       — custom domain',
+    ],
+    0,
+    DOMAIN_FLAG
+  );
+  const domain = domainChoice.split(/\s+/)[0].replace('—', '').trim();
 
   const platformChoice = await arrowSelect(
     'Primary platform? (adapter that will be run)',
@@ -625,6 +657,19 @@ async function main() {
   const techStack = await ask('Primary language?', 'TypeScript', STACK_FLAG);
   const framework = await ask('Framework / runtime?', 'Node.js', FRAMEWORK_FLAG);
 
+  const deployChoice = await arrowSelect(
+    'Deployment target?',
+    [
+      'local       — local development / self-hosted',
+      'cloud       — cloud platforms (Vercel, AWS, GCP, Azure)',
+      'edge        — edge / serverless / CDN',
+      'hybrid      — mixed deployment',
+    ],
+    0,
+    DEPLOY_FLAG
+  );
+  const deployTarget = deployChoice.split(/\s+/)[0].replace('—', '').trim();
+
   // RNA Studio
   console.log('');
   console.log(c('bold', '  ── ④ RNA Studio ────────────────────────────────────'));
@@ -705,9 +750,13 @@ async function main() {
   // ── Phase 3: Build schema + patch config files ────────────────────────────
 
   const schema          = JSON.parse(rawSchema);
-  schema.meta.projectName = projectName;
-  schema.meta.platform    = platform;
-  schema.meta.generatedAt = new Date().toISOString();
+  schema.meta.projectName      = projectName;
+  schema.meta.description      = projectDescription;
+  schema.meta.domain           = domain;
+  schema.meta.stack            = { language: techStack, framework, extras: [] };
+  schema.meta.deploymentTarget = deployTarget;
+  schema.meta.platform         = platform;
+  schema.meta.generatedAt      = new Date().toISOString();
   schema.agents           = schema.agents.filter(a => selectedAgents.includes(a.id));
   schema.rules            = schema.rules.filter(r => r.alwaysApply || selectedRules.includes(r.id));
 
@@ -792,7 +841,7 @@ async function main() {
   writef(schemaOutPath,    JSON.stringify(schema,    null, 2) + '\n');
   writef(receptorsOutPath, JSON.stringify(receptors, null, 2) + '\n');
   writef(timelineOutPath,  JSON.stringify(timeline,  null, 2) + '\n');
-  writef(sessionZeroPath,  buildSessionZero({ projectName, platform, selectedAgents, techStack, framework }));
+  writef(sessionZeroPath,  buildSessionZero({ projectName, description: projectDescription, domain, platform, selectedAgents, techStack, framework, deployTarget }));
 
   const agentContext = {
     activeJoins: [],
@@ -829,6 +878,57 @@ async function main() {
   mkdirp(rnaConfigDir);
   writef(rnaConfigPath, JSON.stringify(rnaConfig, null, 2) + '\n');
   console.log('  ✓ .rna/config.json');
+
+  // ── Phase 4.55: Write _base-agent.md + toon-registry.md ─────────────────
+
+  try {
+    const baseAgentTpl = await getFile('templates/_base-agent.md');
+    writef(path.join(rnaConfigDir, '_base-agent.md'), baseAgentTpl);
+    console.log('  ✓ .rna/_base-agent.md');
+  } catch (e) {
+    console.log(c('yellow', `  ⚠ Could not write _base-agent.md: ${e.message}`));
+  }
+
+  try {
+    let toonTpl = await getFile('templates/toon-registry.md');
+
+    // Build TOON interpolation values from project context
+    const stackLine = [techStack, framework].filter(Boolean).join(' | ');
+    const stackAcronyms = [];
+    if (/typescript/i.test(techStack)) stackAcronyms.push('| TS  | TypeScript |');
+    if (/javascript/i.test(techStack)) stackAcronyms.push('| JS  | JavaScript |');
+    if (/python/i.test(techStack))     stackAcronyms.push('| PY  | Python |');
+    if (/next/i.test(framework))       stackAcronyms.push('| NXT | Next.js |');
+    if (/react/i.test(framework))      stackAcronyms.push('| RCT | React |');
+    if (/node/i.test(framework))       stackAcronyms.push('| NOD | Node.js |');
+    if (/express/i.test(framework))    stackAcronyms.push('| EXP | Express |');
+    if (/django/i.test(framework))     stackAcronyms.push('| DJG | Django |');
+    if (/flask/i.test(framework))      stackAcronyms.push('| FLK | Flask |');
+    if (/vue/i.test(framework))        stackAcronyms.push('| VUE | Vue.js |');
+    if (/angular/i.test(framework))    stackAcronyms.push('| ANG | Angular |');
+
+    const joinAcronyms = [];
+    const joinPatterns = [];
+    for (const jp of (schema.joiningPatterns || [])) {
+      const abbr = jp.shortId || jp.id.replace(/-/g, '').toUpperCase().slice(0, 3);
+      const name = jp.name || jp.id;
+      const agents = jp.agents || jp.steps || [];
+      joinAcronyms.push(`| ${abbr} | ${name} |`);
+      const agentFlow = agents.map(a => `@${a}`).join(' → ');
+      joinPatterns.push(`| ${abbr} | ${name} | ${agentFlow} | ${agents.length} |`);
+    }
+
+    toonTpl = toonTpl
+      .replace('{{STACK_LINE}}',      stackLine || 'TypeScript | Node.js')
+      .replace('{{STACK_ACRONYMS}}',  stackAcronyms.join('\n') || '| — | — |')
+      .replace('{{JOIN_ACRONYMS}}',   joinAcronyms.join('\n')  || '| — | — |')
+      .replace('{{JOIN_PATTERNS}}',   joinPatterns.join('\n')   || '| — | — | — | — |');
+
+    writef(path.join(rnaConfigDir, 'toon-registry.md'), toonTpl);
+    console.log('  ✓ .rna/toon-registry.md');
+  } catch (e) {
+    console.log(c('yellow', `  ⚠ Could not write toon-registry.md: ${e.message}`));
+  }
 
   // ── Phase 4.6: Copy tools/validate-registry.js ────────────────────────────
 

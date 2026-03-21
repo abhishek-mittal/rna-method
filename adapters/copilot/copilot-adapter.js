@@ -57,29 +57,19 @@ function mkFrontmatter(agent) {
 }
 
 function mkActivation(agent) {
-  return `You must fully embody this agent's persona and follow all instructions exactly. NEVER break character.
+  return `[inherits: .rna/_base-agent.md]
+
+You must fully embody this agent's persona and follow all instructions exactly. NEVER break character.
 
 <agent-activation CRITICAL="MANDATORY">
 1. Load this full agent file — persona, capabilities, standards, and protocols are all active.
-2. BEFORE ANY OUTPUT: Read \`_memory/rna-method/timeline.json\` — store phase, last decisions, open questions.
-3. Read \`_memory/rna-method/agent-context.json\` — note active joins, open checkpoints, blockers.
-4. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent.id}\`.
-5. Announce: "I am ${agent.name || agent.id.charAt(0).toUpperCase() + agent.id.slice(1)}. [N] active signals. [Summary or 'queue is clear.']"
-6. Ask what to work on, or proceed with the top queued signal.
+2. Follow §Step1 from \`.rna/_base-agent.md\` — read RNA state files, announce identity, check for handoff/resume.
+3. Read \`_memory/rna-method/receptors.json\` — identify active routes assigned to \`${agent.id}\`.
+4. Announce: "I am ${agent.name || agent.id.charAt(0).toUpperCase() + agent.id.slice(1)}. [N] active signals. [Summary or 'queue is clear.']"
+5. Ask what to work on, or proceed with the top queued signal.
 
 After completing your task:
-7. Write session log to \`_memory/agents/${agent.id}/YYYY-MM-DD_<task-slug>_session.md\`.
-8. Append to \`_memory/rna-method/timeline.json\` \`recentDecisions[]\` — { date, agent, decision, rationale }.
-9. Update \`_memory/rna-method/agent-context.json\` — clear resolved checkpoints, update join \`completedSteps[]\` if applicable.
-10. Output §task-complete block:
-    §task-complete(@${agent.id})
-      status:    ✅ Done | ⚠️ Partial | ❌ Blocked
-      what:      <1-2 sentences: what was delivered>
-      files:     [<created / modified paths>]
-      decisions: [<key decisions made>]
-      next-actions:
-        - [@<agent> or You] <specific action>
-      open:      [<blocker or follow-up question>]
+6. Follow §task-complete from \`.rna/_base-agent.md\` — write session log, update timeline, clear checkpoints.
 </agent-activation>`;
 }
 
@@ -104,7 +94,39 @@ function mkSessionEnd(agent) {
 
 // ─── Per-agent rich body sections ─────────────────────────────────────────────
 
-function developerBody(agent) {
+function developerBody(agent, meta) {
+  const stack = (meta && meta.stack) || {};
+  const lang  = (stack.language || '').toLowerCase();
+  const fw    = (stack.framework || '').toLowerCase();
+  const isTS  = lang.includes('typescript');
+  const isPy  = lang.includes('python');
+
+  // Build language-appropriate standards
+  const standards = [
+    '- **Early returns over nested conditionals.** Fail fast; happy path last.',
+    '- **DRY principle.** No copy-pasted logic. Extract shared logic.',
+    '- **Minimal diffs.** Change only what is required by the task.',
+  ];
+
+  if (isTS) {
+    standards.push('- **TypeScript strict mode.** No `any`, no `@ts-ignore` without explanation comment.');
+    standards.push('- **Zod validation** on all external inputs in API routes.');
+  } else if (isPy) {
+    standards.push('- **Type hints** on all function signatures. Use `mypy` strict mode.');
+    standards.push('- **Pydantic validation** on all external inputs.');
+  }
+
+  standards.push('- **No `console.log`/`debugger`** (or `print()` for debug) in production code paths.');
+  standards.push('- **No hardcoded secrets.** Use environment variables only.');
+
+  if (isTS || lang.includes('javascript')) {
+    standards.push('- **JSDoc** on all public `lib/` and `api/` functions.');
+    standards.push('- **Event handlers** prefixed with `handle` — e.g. `handleSave`, `handleKeyDown`.');
+  }
+  if (isPy) {
+    standards.push('- **Docstrings** on all public functions (Google style).');
+  }
+
   return `# ${agent.name || 'Developer'} — Full-Stack Developer
 
 ## Identity
@@ -125,15 +147,7 @@ ${agent.capabilities.map(c => `- ${c}`).join('\n')}
 
 ## Development Standards
 
-- **Early returns over nested conditionals.** Fail fast; happy path last.
-- **DRY principle.** No copy-pasted logic. Extract shared logic to \`lib/\`.
-- **Minimal diffs.** Change only what is required by the task.
-- **TypeScript strict mode.** No \`any\`, no \`@ts-ignore\` without explanation comment.
-- **Zod validation** on all external inputs in API routes.
-- **No \`console.log\`/\`debugger\`** in production code paths.
-- **No hardcoded secrets.** Use environment variables only.
-- **JSDoc** on all public \`lib/\` and \`api/\` functions.
-- **Event handlers** prefixed with \`handle\` — e.g. \`handleSave\`, \`handleKeyDown\`.
+${standards.join('\n')}
 
 ---
 
@@ -159,7 +173,27 @@ ${mkSessionEnd(agent)}
 | \`refactor\` | One concern at a time — document reason for each change |`;
 }
 
-function reviewerBody(agent) {
+function reviewerBody(agent, meta) {
+  const stack = (meta && meta.stack) || {};
+  const lang  = (stack.language || '').toLowerCase();
+  const isTS  = lang.includes('typescript');
+  const isPy  = lang.includes('python');
+
+  const coreChecks = [
+    '- [ ] No `console.log()`/`debugger` (or `print()` for debug) in production paths',
+    '- [ ] No hardcoded secrets or tokens',
+  ];
+  if (isTS) {
+    coreChecks.push('- [ ] TypeScript compiles without errors (`tsc --noEmit`)');
+    coreChecks.push('- [ ] Zod validation on all API route inputs');
+    coreChecks.push('- [ ] JSDoc on all new public `lib/` functions');
+  } else if (isPy) {
+    coreChecks.push('- [ ] Type hints pass `mypy --strict`');
+    coreChecks.push('- [ ] Pydantic validation on all API inputs');
+    coreChecks.push('- [ ] Docstrings on all new public functions');
+  }
+  coreChecks.push('- [ ] Error shape consistent across API responses');
+
   return `# ${agent.name || 'Reviewer'} — Code Reviewer / Security Analyst
 
 ## Identity
@@ -181,12 +215,7 @@ ${agent.capabilities.map(c => `- ${c}`).join('\n')}
 ## Review Checklist
 
 ### Every PR
-- [ ] No \`console.log()\`/\`debugger\` in production paths
-- [ ] No hardcoded secrets or tokens
-- [ ] TypeScript compiles without errors (\`tsc --noEmit\`)
-- [ ] Zod validation on all API route inputs
-- [ ] Error shape consistent with \`{ error: string }\`
-- [ ] JSDoc on all new public \`lib/\` functions
+${coreChecks.join('\n')}
 
 ### Security
 - [ ] No path traversal vulnerabilities
@@ -452,10 +481,10 @@ ${mkSessionEnd(agent)}
 | \`blocker\` | Escalate to \`@director\` with context |`;
 }
 
-function agentBody(agent) {
+function agentBody(agent, meta) {
   switch (agent.id) {
-    case 'developer': return developerBody(agent);
-    case 'reviewer':  return reviewerBody(agent);
+    case 'developer': return developerBody(agent, meta);
+    case 'reviewer':  return reviewerBody(agent, meta);
     case 'architect': return architectBody(agent);
     case 'researcher':return researcherBody(agent);
     case 'director':  return directorBody(agent);
@@ -476,7 +505,7 @@ function generateAgents(schema, outDir) {
       '',
       mkActivation(agent),
       '',
-      agentBody(agent),
+      agentBody(agent, schema.meta),
       ''
     ].join('\n');
 
@@ -495,6 +524,26 @@ function generateCopilotInstructions(schema, outDir) {
     `> Auto-generated from RNA schema v${schema.version}. Edit \`schema/rna-schema.json\` and re-run the adapter to update.`,
     ''
   ];
+
+  // Project context (from schema.meta)
+  const meta = schema.meta || {};
+  if (meta.description || meta.domain || meta.stack || meta.deploymentTarget) {
+    lines.push('## Project Context');
+    lines.push('');
+    lines.push('| Field | Value |');
+    lines.push('|-------|-------|');
+    lines.push(`| Project | ${meta.projectName} |`);
+    if (meta.description)      lines.push(`| Description | ${meta.description} |`);
+    if (meta.domain)           lines.push(`| Domain | ${meta.domain} |`);
+    if (meta.stack) {
+      const stackStr = [meta.stack.language, meta.stack.framework, ...(meta.stack.extras || [])].filter(Boolean).join(' · ');
+      lines.push(`| Stack | ${stackStr} |`);
+    }
+    if (meta.deploymentTarget) lines.push(`| Deployment | ${meta.deploymentTarget} |`);
+    lines.push('');
+    lines.push('All agents should use this project context when making decisions about code style, tooling, and architecture.');
+    lines.push('');
+  }
 
   // Always-apply rules
   for (const rule of schema.rules.filter(r => r.alwaysApply)) {
@@ -596,22 +645,43 @@ function generateInstructionFiles(schema, outDir) {
   const dir = path.join(outDir, 'instructions');
   ensureDir(dir);
 
+  const meta  = schema.meta || {};
+  const stack = meta.stack || {};
+  const lang  = (stack.language || '').toLowerCase();
+
+  // Derive applyTo pattern from language
+  let defaultApplyTo = '**/*';
+  if (lang.includes('typescript'))      defaultApplyTo = '**/*.{ts,tsx}';
+  else if (lang.includes('javascript')) defaultApplyTo = '**/*.{js,jsx}';
+  else if (lang.includes('python'))     defaultApplyTo = '**/*.py';
+  else if (lang.includes('rust'))       defaultApplyTo = '**/*.rs';
+  else if (lang.includes('go'))         defaultApplyTo = '**/*.go';
+
   for (const rule of schema.rules.filter(r => !r.alwaysApply)) {
-    const content = [
+    const applyTo = rule.applyTo || defaultApplyTo;
+    const contentParts = [
       '---',
       `description: "${rule.description}"`,
-      `applyTo: "**/*"`,
+      `applyTo: "${applyTo}"`,
       '---',
       '',
       `# ${rule.name}`,
       '',
       rule.description,
       '',
-      rule.content ? rule.content + '\n' : '',
-      `**Trigger keywords:** ${(rule.triggerKeywords || []).join(', ') || 'Manual'}  `,
-      `**Owner agent:** ${rule.ownedBy || 'Any'}`
-    ].join('\n');
+    ];
 
+    if (rule.content) contentParts.push(rule.content + '\n');
+
+    // Add stack context if relevant
+    if (meta.stack && (meta.stack.language || meta.stack.framework)) {
+      contentParts.push(`**Stack:** ${[meta.stack.language, meta.stack.framework].filter(Boolean).join(' / ')}  `);
+    }
+
+    contentParts.push(`**Trigger keywords:** ${(rule.triggerKeywords || []).join(', ') || 'Manual'}  `);
+    contentParts.push(`**Owner agent:** ${rule.ownedBy || 'Any'}`);
+
+    const content = contentParts.join('\n');
     fs.writeFileSync(path.join(dir, `${rule.id}.instructions.md`), content, 'utf-8');
   }
 
