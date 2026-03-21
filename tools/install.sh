@@ -558,11 +558,11 @@ platform: ${platform}
 ## How to re-run
 
 \`\`\`bash
-# Update an existing install:
+# Update an existing install (from within the rna-method repo):
 bash tools/install.sh --update
 
-# Or with the Node installer:
-node tools/init.js --update
+# Or via curl (no clone needed):
+curl -fsSL https://raw.githubusercontent.com/abhishek-mittal/rna-method/main/tools/install.sh | bash -- --update
 \`\`\`
 
 ## How to validate
@@ -1594,7 +1594,9 @@ main() {
   printf "    2. Run $(c_cyan "/rna.setup") in your editor chat to personalise the collective\n"
   printf "    3. Open $(c_cyan "${PLATFORM_ENTRY[$FINAL_PLATFORM]:-platform-entry}") in your editor\n"
   if [[ "$FINAL_STUDIO_ENABLED" == true ]]; then
-    printf "    4. Start RNA Studio: $(c_cyan "node tools/init.js --studio --studio-port=$FINAL_STUDIO_PORT")\n"
+    printf "    4. Start RNA Studio:\n"
+    printf "       $(c_cyan "node <path-to-rna-method>/studio/server.js")  →  http://localhost:$FINAL_STUDIO_PORT\n"
+    printf "       $(c_gray "(clone rna-method once and point server.js at this project root)")\n"
     printf "    5. Invoke your first agent:\n"
   else
     printf "    4. Invoke your first agent:\n"
