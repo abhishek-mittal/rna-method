@@ -1,10 +1,6 @@
-name: Deploy Docs to GitHub Pages
+name: Deploy Docs to GitHub Pages (DEPRECATED — superseded by deploy.yml)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'docs/**'
   workflow_dispatch:
 
 permissions:

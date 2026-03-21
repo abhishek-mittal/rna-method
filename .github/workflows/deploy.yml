@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'docs/CNAME'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +36,9 @@ jobs:
 
       - name: Build
         run: cd site && npm run build
+
+      - name: Copy CNAME for custom domain
+        run: cp docs/CNAME site/dist/CNAME
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
