@@ -93,6 +93,8 @@ STACK_FLAG=""
 FRAMEWORK_FLAG=""
 DIRECTOR_NAME_FLAG=""
 OUTPUT_FLAG=""
+STUDIO_FLAG=""
+STUDIO_PORT_FLAG=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -108,6 +110,8 @@ for arg in "$@"; do
     --framework=*)        FRAMEWORK_FLAG="${arg#--framework=}" ;;
     --director-name=*)    DIRECTOR_NAME_FLAG="${arg#--director-name=}" ;;
     --output=*)           OUTPUT_FLAG="${arg#--output=}" ;;
+    --studio=*)           STUDIO_FLAG="${arg#--studio=}" ;;
+    --studio-port=*)      STUDIO_PORT_FLAG="${arg#--studio-port=}" ;;
     --help|-h)
       sed -n '2,30p' "${BASH_SOURCE[0]:-$0}" | grep '^#' | sed 's/^# \{0,1\}//'
       exit 0
@@ -1189,6 +1193,8 @@ delegate_to_node() {
     "--platform=${FINAL_PLATFORM}"
     "--project-name=${FINAL_PROJECT_NAME}"
     "--output=${OUTPUT_DIR}"
+    "--studio=${FINAL_STUDIO_ENABLED}"
+    "--studio-port=${FINAL_STUDIO_PORT}"
   )
 
   if [[ "$DRY_RUN" == true ]]; then
@@ -1345,6 +1351,30 @@ main() {
   ask_input "Framework / runtime?" "Node.js" "$FRAMEWORK_FLAG"
   FINAL_FRAMEWORK="$ASK_RESULT"
 
+  # ── Section 4: RNA Studio ──────────────────────────────────────────────────
+
+  echo ""
+  printf "  ${BOLD}── ④ RNA Studio ────────────────────────────────────${RESET}\n"
+  printf "  $(c_gray "RNA Studio is a local web dashboard for monitoring your agent collective.")\n"
+
+  FINAL_STUDIO_ENABLED=false
+  FINAL_STUDIO_PORT=7337
+  if [[ -n "$STUDIO_FLAG" ]]; then
+    [[ "$STUDIO_FLAG" == "true" || "$STUDIO_FLAG" == "yes" ]] && FINAL_STUDIO_ENABLED=true
+  elif [[ "$NON_INTERACTIVE" != true ]]; then
+    arrow_select "Enable RNA Studio? (local dashboard for agent monitoring)" 0 "" \
+      "yes — install RNA Studio" \
+      "no  — skip for now (can add later)"
+    [[ "$ARROW_SELECT_RESULT" == yes* ]] && FINAL_STUDIO_ENABLED=true
+  fi
+
+  if [[ -n "$STUDIO_PORT_FLAG" ]]; then
+    FINAL_STUDIO_PORT="$STUDIO_PORT_FLAG"
+  elif [[ "$FINAL_STUDIO_ENABLED" == true ]] && [[ "$NON_INTERACTIVE" != true ]]; then
+    ask_input "Studio port?" "7337" ""
+    FINAL_STUDIO_PORT="$ASK_RESULT"
+  fi
+
   # ── Summary ──────────────────────────────────────────────────────────────────
 
   local agents_csv
@@ -1363,6 +1393,11 @@ main() {
   printf "  Rules    : $(c_cyan "$rules_csv")\n"
   printf "  Joins    : $(c_cyan "$include_joins")\n"
   printf "  Stack    : $(c_cyan "$FINAL_STACK") / $(c_cyan "$FINAL_FRAMEWORK")\n"
+  if [[ "$FINAL_STUDIO_ENABLED" == true ]]; then
+    printf "  Studio   : $(c_cyan "yes (port $FINAL_STUDIO_PORT)")\n"
+  else
+    printf "  Studio   : $(c_cyan "no")\n"
+  fi
   printf "  Output   : $(c_cyan "$OUTPUT_DIR")\n"
   echo ""
 
@@ -1535,8 +1570,14 @@ main() {
   echo ""
   printf "  ${BOLD}Next steps:${RESET}\n"
   printf "    1. Read $(c_cyan "_memory/rna-method/session-zero.md") — it explains the setup\n"
-  printf "    2. Open $(c_cyan "${PLATFORM_ENTRY[$FINAL_PLATFORM]:-platform-entry}") in your editor\n"
-  printf "    3. Invoke your first agent:\n"
+  printf "    2. Run $(c_cyan "/rna.setup") in your editor chat to personalise the collective\n"
+  printf "    3. Open $(c_cyan "${PLATFORM_ENTRY[$FINAL_PLATFORM]:-platform-entry}") in your editor\n"
+  if [[ "$FINAL_STUDIO_ENABLED" == true ]]; then
+    printf "    4. Start RNA Studio: $(c_cyan "node tools/init.js --studio --studio-port=$FINAL_STUDIO_PORT")\n"
+    printf "    5. Invoke your first agent:\n"
+  else
+    printf "    4. Invoke your first agent:\n"
+  fi
   printf "       $(c_gray "@developer Implement a user authentication endpoint")\n"
   echo ""
 }

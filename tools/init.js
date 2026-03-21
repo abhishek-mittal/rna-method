@@ -25,6 +25,8 @@
  *   --stack=<language>                  (e.g. TypeScript)
  *   --framework=<framework>             (e.g. Next.js)
  *   --director-name=<name>              (persona name for the director agent, e.g. Abhishek)
+ *   --studio=<true|false>               (enable RNA Studio dashboard)
+ *   --studio-port=<port>                (default: 7337)
  *   --output=<dir>                      (default: cwd)
  *   --non-interactive                   (accept defaults; combine with other flags)
  */
@@ -66,6 +68,8 @@ const STACK_FLAG        = flag('stack');
 const FRAMEWORK_FLAG    = flag('framework');
 const DIRECTOR_NAME_FLAG = flag('director-name');
 const OUTPUT_FLAG       = flag('output');
+const STUDIO_FLAG       = flag('studio');
+const STUDIO_PORT_FLAG  = flag('studio-port');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -626,8 +630,8 @@ async function main() {
   console.log(c('bold', '  ── ④ RNA Studio ────────────────────────────────────'));
   console.log(c('gray', '  RNA Studio is a local web dashboard for monitoring your agent collective.'));
 
-  let enableStudio = false;
-  let studioPort   = 7337;
+  let enableStudio = STUDIO_FLAG === 'true' || STUDIO_FLAG === 'yes';
+  let studioPort   = parseInt(STUDIO_PORT_FLAG, 10) || 7337;
   if (!NON_INTERACTIVE) {
     const studioChoice = await arrowSelect(
       'Enable RNA Studio? (local dashboard for agent monitoring)',
