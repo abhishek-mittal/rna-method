@@ -34,7 +34,7 @@
       "description": "Validate registry when RNA files change",
       "activates": "validate-registry",
       "type": "script",
-      "scriptPath": "tools/validate-registry.js",
+      "scriptPath": ".rna/validate-registry.js",
       "directorApproval": false,
       "enabled": true
     }

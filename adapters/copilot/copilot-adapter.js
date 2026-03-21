@@ -521,7 +521,7 @@ function generateCopilotInstructions(schema, outDir) {
   const lines = [
     `# Copilot Instructions — ${schema.meta.projectName}`,
     '',
-    `> Auto-generated from RNA schema v${schema.version}. Edit \`schema/rna-schema.json\` and re-run the adapter to update.`,
+    `> Auto-generated from RNA schema v${schema.version}. Edit \`.rna/rna-schema.json\` and re-run the adapter to update.`,
     ''
   ];
 

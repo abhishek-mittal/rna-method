@@ -547,10 +547,13 @@ platform: ${platform}
 
 | File | Purpose |
 |------|---------|
-| \`rna-schema.json\` | Source of truth — agents, rules, skills, hooks |
+| \`.rna/rna-schema.json\` | Source of truth — agents, rules, skills, hooks |
 | \`_memory/rna-method/receptors.json\` | Agent registry |
 | \`_memory/rna-method/timeline.json\` | Project state |
 | \`${PLATFORM_ENTRY[$platform]:-platform-entry}\` | ${platform} loader |
+
+> All RNA config is in \`.rna/\`, runtime state in \`_memory/\`.
+> Add \`_memory/\` to \`.gitignore\` — it is managed by agents during sessions.
 
 ## How to re-run
 
@@ -565,7 +568,7 @@ node tools/init.js --update
 ## How to validate
 
 \`\`\`bash
-node tools/validate-registry.js --root ./
+node .rna/validate-registry.js --root ./
 \`\`\`
 "
 
@@ -1155,7 +1158,7 @@ ${session_end}"
 ## Role
 
 $(case "$agent_id" in
-  *) echo "Specialist agent — see rna-schema.json for full definition." ;;
+  *) echo "Specialist agent — see .rna/rna-schema.json for full definition." ;;
 esac)
 
 **Invoke:** \`@${agent_id} <task>\`
@@ -1234,7 +1237,7 @@ main() {
 
   # ── Detect existing install ─────────────────────────────────────────────────
 
-  if [[ -f "${OUTPUT_DIR}/rna-schema.json" ]] && [[ "$UPDATE_FLAG" != true ]]; then
+  if [[ -f "${OUTPUT_DIR}/.rna/rna-schema.json" || -f "${OUTPUT_DIR}/rna-schema.json" ]] && [[ "$UPDATE_FLAG" != true ]]; then
     echo ""
     printf "  $(c_yellow "⚠")  Existing RNA Method install detected at: ${OUTPUT_DIR}\n"
     arrow_select "How would you like to proceed?" 0 "" \
@@ -1455,10 +1458,13 @@ main() {
   ensure_dir "$mem_dir"
   ensure_dir "${mem_dir}/checkpoints"
 
+  local rna_dir="${OUTPUT_DIR}/.rna"
+  ensure_dir "$rna_dir"
+
   local agents_json
   agents_json="$(bash_array_to_json "${selected_agents[@]}")"
 
-  local schema_path="${OUTPUT_DIR}/rna-schema.json"
+  local schema_path="${rna_dir}/rna-schema.json"
   local receptors_path="${mem_dir}/receptors.json"
   local timeline_path="${mem_dir}/timeline.json"
   local session_zero_path="${mem_dir}/session-zero.md"
@@ -1468,7 +1474,7 @@ main() {
   write_timeline_json  "$timeline_path"  "$FINAL_PROJECT_NAME" "$FINAL_STACK"    "$FINAL_FRAMEWORK" "$ts"
   write_session_zero   "$mem_dir"        "$FINAL_PROJECT_NAME" "$FINAL_PLATFORM" "$agents_json" "$FINAL_STACK" "$FINAL_FRAMEWORK" "$ts"
 
-  printf "  $(c_green "✓") rna-schema.json\n"
+  printf "  $(c_green "✓") .rna/rna-schema.json\n"
   printf "  $(c_green "✓") _memory/rna-method/receptors.json\n"
   printf "  $(c_green "✓") _memory/rna-method/timeline.json\n"
   printf "  $(c_green "✓") _memory/rna-method/session-zero.md\n"
@@ -1536,6 +1542,21 @@ main() {
       ;;
   esac
 
+  # ── Ensure .gitignore covers _memory/ ──────────────────────────────────────
+
+  local gitignore_path="${OUTPUT_DIR}/.gitignore"
+  if [[ "$DRY_RUN" == true ]]; then
+    printf "  $(c_gray "[dry-run] would append _memory/ to .gitignore")\n"
+  elif ! grep -qF '_memory/' "$gitignore_path" 2>/dev/null; then
+    {
+      echo ""
+      echo "# RNA Method — runtime state (managed by agents during sessions)"
+      echo "_memory/"
+      echo ""
+    } >> "$gitignore_path"
+    printf "  $(c_green "✓") .gitignore — added _memory/\n"
+  fi
+
   # ── Token Footprint ───────────────────────────────────────────────────────────
 
   if [[ "$DRY_RUN" != true ]]; then
@@ -1562,7 +1583,7 @@ main() {
   printf "  ${GREEN}${BOLD}✓ RNA Method initialised!${RESET}\n"
   echo ""
   printf "  ${BOLD}Files created:${RESET}\n"
-  printf "    rna-schema.json                         ← source of truth\n"
+  printf "    .rna/rna-schema.json                    ← source of truth\n"
   printf "    _memory/rna-method/receptors.json       ← agent registry\n"
   printf "    _memory/rna-method/timeline.json        ← project state\n"
   printf "    _memory/rna-method/session-zero.md      ← start here\n"
