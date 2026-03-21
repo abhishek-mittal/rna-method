@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 32" fill="none">
+  <rect width="28" height="28" x="2" y="2" rx="6" fill="#00d4ff" fill-opacity="0.15" stroke="#00d4ff" stroke-width="1.5"/>
+  <path d="M8 22L8 10L14 10C17.3 10 19 11.7 19 14.5C19 16.5 18 17.8 16.4 18.4L19.5 22H16.8L14 18.8H10.5V22H8ZM10.5 17H13.8C15.6 17 16.5 16 16.5 14.5C16.5 13 15.6 12.2 13.8 12.2H10.5V17Z" fill="#00d4ff"/>
+  <path d="M21 22L21 10L23.2 10L27.5 17.5L27.5 10H30H30V22H27.8L23.5 14.5V22H21Z" fill="#00d4ff"/>
+  <text x="36" y="21" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#00d4ff">RNA</text>
+  <text x="66" y="21" font-family="Inter, sans-serif" font-size="12" font-weight="400" fill="#5ba3c8">Method</text>
+</svg>

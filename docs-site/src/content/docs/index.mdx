@@ -1,0 +1,43 @@
+---
+title: RNA Method Documentation
+description: Official documentation for the RNA Method — a reusable agent architecture for AI-assisted software development.
+template: splash
+hero:
+  title: RNA Method
+  tagline: A reusable agent architecture for AI coding workflows. Ship faster with structured multi-agent collectives.
+  image:
+    dark: ../../assets/logo-dark.svg
+    light: ../../assets/logo-light.svg
+  actions:
+    - text: Get Started
+      link: /docs/getting-started
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/abhishek-mittal/rna-method
+      icon: external
+      variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Core Documentation
+
+<CardGrid stagger>
+  <Card title="Getting Started" icon="rocket">
+    Set up your first RNA Method collective in ~30 minutes. Step-by-step wizard walkthrough.
+    [Read guide →](/docs/getting-started)
+  </Card>
+  <Card title="RNA Commands" icon="terminal">
+    In-session `/rna.*` directives — compact, checkpoint, handoff, and more.
+    [Read reference →](/docs/reference/rna-commands)
+  </Card>
+  <Card title="Schema Reference" icon="document">
+    Complete annotated reference for `rna-schema.json`, the canonical collective config.
+    [Read reference →](/docs/reference/schema-reference)
+  </Card>
+  <Card title="Base Agent Signal Hub" icon="puzzle">
+    The `_base-agent` architecture — the hidden signal router every collective shares.
+    [Read concept →](/docs/concepts/base-agent-signal-hub)
+  </Card>
+</CardGrid>

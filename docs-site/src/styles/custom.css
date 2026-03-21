@@ -1,0 +1,72 @@
+/* RNA Method — Starlight theme overrides */
+/* Mirrors the landing page palette: bg #070712, surface #0d0d1f, accents cyan/green/purple */
+
+:root[data-theme='dark'],
+:root {
+  /* Background */
+  --sl-color-bg: #070712;
+  --sl-color-bg-nav: #0d0d1f;
+  --sl-color-bg-sidebar: #0a0a1a;
+  --sl-color-bg-inline-code: rgba(0, 212, 255, 0.08);
+
+  /* Accent — cyan */
+  --sl-color-accent-low: rgba(0, 212, 255, 0.12);
+  --sl-color-accent: #00d4ff;
+  --sl-color-accent-high: #7ce8ff;
+
+  /* Text */
+  --sl-color-white: #f0f9ff;
+  --sl-color-gray-1: #cce8f4;
+  --sl-color-gray-2: #99cfe8;
+  --sl-color-gray-3: #5ba3c8;
+  --sl-color-gray-4: #2d6b96;
+  --sl-color-gray-5: #1a3d5c;
+  --sl-color-gray-6: #0f2540;
+  --sl-color-black: #070712;
+
+  /* Hairlines */
+  --sl-color-hairline-shade: rgba(0, 212, 255, 0.06);
+  --sl-color-hairline: rgba(0, 212, 255, 0.1);
+}
+
+/* Sidebar nav tweaks */
+:global(.sidebar-pane) {
+  border-right: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+/* Code block font */
+:global(.expressive-code) {
+  --ec-codeFontFml: 'JetBrains Mono', 'Fira Code', monospace;
+  --ec-codeFontSize: 0.875rem;
+}
+
+/* Nav logo area */
+:global(header.header) {
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+/* Inline code */
+:global(:not(pre) > code) {
+  background: rgba(0, 212, 255, 0.08) !important;
+  color: #00d4ff !important;
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.85em;
+}
+
+/* Page title */
+:global(.sl-markdown-content h1) {
+  background: linear-gradient(135deg, #00d4ff, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Link colors */
+:global(.sl-markdown-content a) {
+  color: #00d4ff;
+}
+
+:global(.sl-markdown-content a:hover) {
+  color: #7ce8ff;
+}

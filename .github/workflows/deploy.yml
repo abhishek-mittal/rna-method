@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'docs-site/**'
       - 'docs/CNAME'
+      - 'docs/*.md'
   workflow_dispatch:
 
 permissions:
@@ -29,13 +31,29 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: site/package-lock.json
+          cache-dependency-path: |
+            site/package-lock.json
+            docs-site/package-lock.json
 
-      - name: Install dependencies
+      # ── Landing page ────────────────────────────────────────────────────────
+      - name: Install site dependencies
         run: cd site && npm ci
 
-      - name: Build
+      - name: Build landing page
         run: cd site && npm run build
+
+      # ── Docs (Starlight) ────────────────────────────────────────────────────
+      - name: Install docs-site dependencies
+        run: cd docs-site && npm ci
+
+      - name: Build docs
+        run: cd docs-site && npm run build
+
+      # ── Merge artifacts ─────────────────────────────────────────────────────
+      - name: Merge docs into landing page output
+        run: |
+          mkdir -p site/dist/docs
+          cp -r docs-site/dist/. site/dist/docs/
 
       - name: Copy CNAME for custom domain
         run: cp docs/CNAME site/dist/CNAME
