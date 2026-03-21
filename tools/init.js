@@ -71,7 +71,25 @@ const OUTPUT_FLAG       = flag('output');
 
 const PLATFORMS  = ['cursor', 'copilot', 'claude-code', 'codex', 'kimi'];
 const AGENT_IDS  = ['director', 'developer', 'reviewer', 'architect', 'researcher', 'ops'];
-const RULE_IDS   = ['coding-standards', 'security-gate', 'review-gate', 'docs-standards'];
+const RULE_IDS   = ['testing-standards', 'security-gate', 'optimization-workflow', 'pr-description', 'docs-standards'];
+
+// Human-readable labels for rule selection prompt
+const RULE_LABELS = {
+  'testing-standards':     'testing-standards     — test creation standards',
+  'security-gate':         'security-gate         — security checklist',
+  'optimization-workflow': 'optimization-workflow — optimization process',
+  'pr-description':        'pr-description        — PR description template',
+  'docs-standards':        'docs-standards        — documentation standards',
+};
+
+// Map from schema rule IDs to template rule files (for content injection)
+const RULE_TEMPLATE_MAP = {
+  'security-gate':         'security-gate.md',
+  'docs-standards':        'docs-standards.md',
+  'pr-description':        'review-gate.md',
+  'testing-standards':     'coding-standards.md',
+  'optimization-workflow': 'optimization-workflow.md',
+};
 
 // Maps platform → function(projectRoot) → adapter output directory
 const PLATFORM_OUT = {
@@ -425,6 +443,11 @@ platform: ${platform}
 @developer Implement a user authentication endpoint
 \`\`\`
 
+## Personalise your agents
+
+Run \`/rna.setup\` in your AI agent chat to tailor agents for your project domain,
+stack, and conventions. This step contextualises each agent with your specific needs.
+
 ## Key files
 
 | File | Purpose |
@@ -568,12 +591,18 @@ async function main() {
   }
 
   // Rules
-  const selectedRules = await arrowMultiSelect(
+  const ruleChoices = RULE_IDS.map(id => RULE_LABELS[id] || id);
+  const ruleExplicit = RULES_FLAG
+    ? RULES_FLAG.split(',').map(s => s.trim()).filter(r => RULE_IDS.includes(r)).map(id => RULE_LABELS[id] || id)
+    : null;
+
+  const selectedRuleChoices = await arrowMultiSelect(
     'Which rules to include?',
-    RULE_IDS,
-    RULE_IDS,
-    RULES_FLAG ? RULES_FLAG.split(',').map(s => s.trim()).filter(r => RULE_IDS.includes(r)) : null
+    ruleChoices,
+    ruleChoices,
+    ruleExplicit
   );
+  const selectedRules = selectedRuleChoices.map(ch => ch.split(/\s+/)[0].trim());
 
   // Joining patterns
   const includeJoins = selectedAgents.length > 1
@@ -592,6 +621,25 @@ async function main() {
   const techStack = await ask('Primary language?', 'TypeScript', STACK_FLAG);
   const framework = await ask('Framework / runtime?', 'Node.js', FRAMEWORK_FLAG);
 
+  // RNA Studio
+  console.log('');
+  console.log(c('bold', '  ── ④ RNA Studio ────────────────────────────────────'));
+  console.log(c('gray', '  RNA Studio is a local web dashboard for monitoring your agent collective.'));
+
+  let enableStudio = false;
+  let studioPort   = 7337;
+  if (!NON_INTERACTIVE) {
+    const studioChoice = await arrowSelect(
+      'Enable RNA Studio? (local dashboard for agent monitoring)',
+      ['yes — install RNA Studio', 'no  — skip for now (can add later)'],
+      0
+    );
+    enableStudio = studioChoice.startsWith('yes');
+    if (enableStudio) {
+      studioPort = parseInt(await ask('Studio port?', '7337'), 10) || 7337;
+    }
+  }
+
   // ── Summary ───────────────────────────────────────────────────────────────
 
   console.log('');
@@ -605,6 +653,7 @@ async function main() {
     console.log(`  Director : ${c('cyan', directorName)}`);
   }
   console.log(`  Stack    : ${c('cyan', techStack)} / ${c('cyan', framework)}`);
+  console.log(`  Studio   : ${c('cyan', enableStudio ? `yes (port ${studioPort})` : 'no')}`);
   console.log(`  Output   : ${c('cyan', outputDir)}`);
   console.log('');
 
@@ -634,6 +683,19 @@ async function main() {
     getFile('schema/rna-schema.json'),
   ]);
 
+  // Load template rule content for rules that have template files
+  const ruleContentMap = {};
+  for (const [ruleId, tplFile] of Object.entries(RULE_TEMPLATE_MAP)) {
+    try {
+      const raw = await getFile(`templates/rules/${tplFile}`);
+      // Strip frontmatter (between --- delimiters) and use the markdown body
+      const body = raw.replace(/^---[\s\S]*?---\s*/, '').trim();
+      ruleContentMap[ruleId] = body;
+    } catch (_) {
+      // Template file not found — skip
+    }
+  }
+
   console.log(`  ✓ ${tplBase}`);
 
   // ── Phase 3: Build schema + patch config files ────────────────────────────
@@ -643,9 +705,25 @@ async function main() {
   schema.meta.platform    = platform;
   schema.meta.generatedAt = new Date().toISOString();
   schema.agents           = schema.agents.filter(a => selectedAgents.includes(a.id));
-  schema.rules            = schema.rules.filter(r => selectedRules.includes(r.id));
+  schema.rules            = schema.rules.filter(r => r.alwaysApply || selectedRules.includes(r.id));
+
+  // Inject template rule content for rules that lack content
+  for (const rule of schema.rules) {
+    if (!rule.content && ruleContentMap[rule.id]) {
+      rule.content = ruleContentMap[rule.id];
+    }
+  }
+
   if (!includeJoins)      schema.joiningPatterns = [];
   if (!selectedAgents.includes('director')) delete schema.director;
+
+  // Filter commands and skills to only reference selected agents
+  if (schema.commands) {
+    schema.commands = schema.commands.filter(cmd => selectedAgents.includes(cmd.agentId));
+  }
+  if (schema.skills) {
+    schema.skills = schema.skills.filter(sk => !sk.ownedBy || selectedAgents.includes(sk.ownedBy));
+  }
 
   // Patch director display name in schema (flows through to agent body via adapter)
   const schemaDirector = schema.agents?.find(a => a.id === 'director');
@@ -654,6 +732,8 @@ async function main() {
   const receptors = JSON.parse(rawReceptors);
   if (receptors.meta) {
     receptors.meta.projectName = projectName;
+    receptors.meta.project     = projectName;
+    receptors.meta.generatedAt = new Date().toISOString().slice(0, 10);
     if ('platform' in receptors.meta) receptors.meta.platform = platform;
   }
   if (receptors.agents) {
@@ -663,7 +743,11 @@ async function main() {
   }
 
   const timeline = JSON.parse(rawTimeline);
-  if (timeline.meta)         timeline.meta.projectName     = projectName;
+  if (timeline.meta) {
+    timeline.meta.projectName  = projectName;
+    timeline.meta.project      = projectName;
+    timeline.meta.lastUpdated  = new Date().toISOString().slice(0, 10);
+  }
   if (timeline.projectState) timeline.projectState.techStack = { language: techStack, framework };
   if (timeline.projectState && selectedAgents.includes('director')) timeline.projectState.directorName = directorName;
 
@@ -680,6 +764,7 @@ async function main() {
   const receptorsOutPath = path.join(memDir, 'receptors.json');
   const timelineOutPath  = path.join(memDir, 'timeline.json');
   const sessionZeroPath  = path.join(memDir, 'session-zero.md');
+  const agentContextPath = path.join(memDir, 'agent-context.json');
 
   // Stale platform dir cleanup (--update mode)
   if (UPDATE_FLAG) {
@@ -705,9 +790,18 @@ async function main() {
   writef(timelineOutPath,  JSON.stringify(timeline,  null, 2) + '\n');
   writef(sessionZeroPath,  buildSessionZero({ projectName, platform, selectedAgents, techStack, framework }));
 
+  const agentContext = {
+    activeJoins: [],
+    openCheckpoints: [],
+    blockers: [],
+    _note: 'Managed by agents during sessions. See rna-schema.json joiningPatterns[] for available pipelines.',
+  };
+  writef(agentContextPath, JSON.stringify(agentContext, null, 2) + '\n');
+
   console.log('  ✓ rna-schema.json');
   console.log('  ✓ _memory/rna-method/receptors.json');
   console.log('  ✓ _memory/rna-method/timeline.json');
+  console.log('  ✓ _memory/rna-method/agent-context.json');
   console.log('  ✓ _memory/rna-method/session-zero.md');
   console.log('  ✓ _memory/rna-method/checkpoints/');
 
@@ -722,7 +816,8 @@ async function main() {
     projectName,
     adapter: platform,
     adapters: [platform, ...extraAdapters],
-    studioPort: 7337,
+    studio: enableStudio,
+    studioPort: studioPort,
     rnaVersion: (schema.meta && schema.meta.version) ? schema.meta.version : '1.0.0',
     installedAt: new Date().toISOString(),
     _note: 'Generated by tools/init.js. Re-run with --update to refresh.',
@@ -853,13 +948,19 @@ async function main() {
   console.log('');
   console.log(c('bold', '  Next steps:'));
   console.log(`    1. Read ${c('cyan', '_memory/rna-method/session-zero.md')} — your quick-start briefing`);
-  console.log(`    2. Open ${c('cyan', PLATFORM_ENTRY[platform])} in your editor`);
+  console.log(`    2. Run ${c('cyan', '/rna.setup')} in your AI agent chat to personalise`);
+  console.log(`       agents for your project domain, stack, and conventions`);
+  console.log(`    3. Open ${c('cyan', PLATFORM_ENTRY[platform])} in your editor`);
   console.log(`       and verify the ${platform} agent context loads`);
-  console.log(`    3. Edit ${c('cyan', 'rna-schema.json')} to customise agents, rules, and skills`);
-  console.log(`    4. Re-run the adapter after schema changes:`);
+  console.log(`    4. Edit ${c('cyan', 'rna-schema.json')} to customise agents, rules, and skills`);
+  console.log(`    5. Re-run the adapter after schema changes:`);
   console.log(c('gray', `       node ${adapterRelPath} rna-schema.json ./`));
-  console.log(`    5. Validate the registry anytime:`);
+  console.log(`    6. Validate the registry anytime:`);
   console.log(c('gray', `       node ${validateRelPath} --root ./`));
+  if (enableStudio) {
+    console.log(`    7. Start RNA Studio:`);
+    console.log(c('gray', `       node <rna-method>/studio/server.js  →  http://localhost:${studioPort}`));
+  }
   console.log('');
 }
 

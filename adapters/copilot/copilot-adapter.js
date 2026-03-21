@@ -535,7 +535,9 @@ function generateCopilotInstructions(schema, outDir) {
     lines.push('| Command | Agent | Description |');
     lines.push('|---------|-------|-------------|');
     for (const cmd of schema.commands) {
-      lines.push(`| \`${cmd.trigger}\` | ${cmd.agent} | ${cmd.description} |`);
+      const trigger = cmd.trigger || `/${cmd.id}`;
+      const agent   = cmd.agent  || cmd.agentId || '—';
+      lines.push(`| \`${trigger}\` | ${agent} | ${cmd.description || '—'} |`);
     }
     lines.push('');
   }
