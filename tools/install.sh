@@ -17,7 +17,7 @@
 # All flags:
 #   --platform=<cursor|copilot|claude-code|codex|kimi>
 #   --collective=<minimal|full>
-#   --agents=<id,id,...>         (director,developer,reviewer,architect,researcher,ops)
+#   --agents=<id,id,...>         (director,developer,reviewer,architect,researcher,ops,designer)
 #   --rules=<id,id,...>          (coding-standards,security-gate,review-gate,docs-standards)
 #   --project-name=<name>
 #   --stack=<language>           (e.g. TypeScript)
@@ -122,7 +122,7 @@ done
 # ─── Constants ────────────────────────────────────────────────────────────────
 
 PLATFORMS=("cursor" "copilot" "claude-code" "codex" "kimi")
-AGENT_IDS=("director" "developer" "reviewer" "architect" "researcher" "ops")
+AGENT_IDS=("director" "developer" "reviewer" "architect" "researcher" "ops" "designer")
 RULE_IDS=("coding-standards" "security-gate" "review-gate" "docs-standards")
 
 declare -A PLATFORM_ENTRY
@@ -702,7 +702,7 @@ write_cursor_registry() {
 See \`.cursor/agents/\` for individual agent definitions.
 
 To invoke an agent, mention it by name:
-\`@developer\`, \`@reviewer\`, \`@architect\`, \`@researcher\`, \`@ops\`, \`@${FINAL_DIRECTOR_NAME,,}\`
+\`@developer\`, \`@reviewer\`, \`@architect\`, \`@researcher\`, \`@ops\`, \`@designer\`, \`@${FINAL_DIRECTOR_NAME,,}\`
 "
   ensure_dir "${cursor_dir}/agents"
   ensure_dir "${cursor_dir}/rules"
@@ -764,6 +764,7 @@ write_agent_file() {
         architect)  role="System Architect";                caps="api-design, architecture, db-schema";         cmd="/architect" ;;
         researcher) role="Explorer / Researcher";           caps="research, web-research, library-comparison";  cmd="/scout" ;;
         ops)        role="Operator / Automation Specialist"; caps="daily-ops, automation, status-reports";      cmd="/ops" ;;
+        designer)   role="UI/UX & Design System";           caps="ui-design, design-tokens, component-styling, visual-qa"; cmd="/design" ;;
         *)          role="${agent_id^} Agent";              caps=""; cmd="/@${agent_id}" ;;
       esac
       # Role-appropriate tools using VS Code Copilot's group/toolname format
@@ -863,6 +864,24 @@ write_agent_file() {
   - github/issue_read
   - github/list_issues
   - github/get_file_contents" ;;
+        designer)
+          tools_yaml="  - edit/editFiles
+  - edit/createFile
+  - edit/createDirectory
+  - read/readFile
+  - read/problems
+  - search/codebase
+  - search/textSearch
+  - search/fileSearch
+  - search/usages
+  - web/fetch
+  - web/githubRepo
+  - browser/openBrowserPage
+  - com.figma.mcp/get_design_context
+  - com.figma.mcp/get_screenshot
+  - com.figma.mcp/get_metadata
+  - com.figma.mcp/get_variable_defs
+  - com.figma.mcp/get_code_connect_map" ;;
         *)
           tools_yaml="  - read/readFile
   - search/codebase
@@ -1408,7 +1427,7 @@ main() {
   else
     arrow_select "Collective size?" 0 "" \
       "minimal  — 1 agent (developer only, fastest start)" \
-      "full     — 6 agents (director, developer, reviewer, architect, researcher, ops)" \
+      "full     — 7 agents (director, developer, reviewer, architect, researcher, ops, designer)" \
       "custom   — choose which agents to include"
 
     case "$ARROW_SELECT_RESULT" in

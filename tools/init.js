@@ -80,7 +80,7 @@ const STUDIO_PORT_FLAG  = flag('studio-port');
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PLATFORMS  = ['cursor', 'copilot', 'claude-code', 'codex', 'kimi'];
-const AGENT_IDS  = ['director', 'developer', 'reviewer', 'architect', 'researcher', 'ops'];
+const AGENT_IDS  = ['director', 'developer', 'reviewer', 'architect', 'researcher', 'ops', 'designer'];
 const RULE_IDS   = ['testing-standards', 'security-gate', 'optimization-workflow', 'pr-description', 'docs-standards'];
 
 // Human-readable labels for rule selection prompt
@@ -611,7 +611,7 @@ async function main() {
       'Collective size?',
       [
         'minimal  — 1 agent (developer only, fastest start)',
-        'full     — 6 agents (director, developer, reviewer, architect, researcher, ops)',
+        'full     — 7 agents (director, developer, reviewer, architect, researcher, ops, designer)',
         'custom   — choose which agents to include',
       ],
       0

@@ -45,7 +45,7 @@ node tools/init.js --non-interactive \
 | `--output` | dir path | `cwd` |
 | `--non-interactive` | flag | off |
 
-**Valid agent IDs:** `director` `developer` `reviewer` `architect` `researcher` `ops`
+**Valid agent IDs:** `director` `developer` `reviewer` `architect` `researcher` `ops` `designer`
 
 **Valid rule IDs:** `coding-standards` `security-gate` `review-gate` `docs-standards`
 

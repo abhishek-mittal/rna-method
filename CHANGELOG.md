@@ -24,8 +24,14 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 - `templates/_base-agent.md` — 6 new §sections: `§lifecycle-hooks`, `§resilience` (Ralph Loop), `§progressive-context`, `§output-modes`, `§loop-protocol`, `§upgrade-protocol`
 - `registry/capabilities.csv` — CSV-driven single-source-of-truth for all RNA capabilities (commands, skills, hooks, joining patterns)
 - `templates/skill-types/` — 3 skill archetype templates: `advisory.md`, `generator.md`, `loop.md`
+- **Designer agent** — 7th agent role: UI/UX & design system specialist with Figma MCP tools, design token management, component styling, visual QA, and accessibility
+- `templates/full-collective/agents/designer.agent.md` — full agent template with design standards, Figma workflow, and session protocols
+- `design-implement` joining pattern — designer → developer sequential flow for UI design then implementation
+- `schema/rna-schema.json` — designer agent entry with persona, capabilities, and `/design` command
 
 ### Changed
+- Full collective expanded from 6 → 7 agents (added `designer`)
+- `full-pipeline` joining pattern expanded to include `designer`: architect → designer → developer → reviewer
 - `schema/rna-schema.json` — `rnaVersion` bumped from `1.1.0` → `1.2.0`
 - `schema/rna-schema-definition.json` — relaxed `meta.platform` from enum to plain string for custom platform support
 - `schema/rna-schema-definition.json` — relaxed `joiningPatterns` required fields (removed `file` from required)

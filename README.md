@@ -213,7 +213,7 @@ rna-method/
 | Template | Agents | Use when |
 |---|---|---|
 | `minimal-collective` | developer | Solo project, learning RNA Method |
-| `full-collective` | director + developer + reviewer + architect + researcher + ops | Team project, full development lifecycle |
+| `full-collective` | director + developer + reviewer + architect + researcher + ops + designer | Team project, full development lifecycle |
 
 ---
 
@@ -228,6 +228,7 @@ Joining patterns are multi-agent pipelines where agents hand off work to each ot
 | Full Feature | `ff` | director → researcher → developer → reviewer | Complex features requiring upfront design |
 | Continuous Dev Cycle | `cdc` | conductor → developer → [reviewer →] conductor | Ticket-to-PR pipeline |
 | R&D Synthesis | `rds` | lab → [researcher →] [lab →] [curator] | Deep research + synthesis |
+| Design-Implement | `design-implement` | designer → developer | UI design then implementation |
 
 See [templates/joins/](templates/joins/) for complete handoff protocol documentation.
 

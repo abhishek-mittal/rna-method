@@ -124,6 +124,20 @@
       "capabilities": ["daily-ops", "status-reports", "automation"],
       "autoActivate": false,
       "systemPrompt": "You are the Ops agent. Run daily ops workflows, generate status reports, and handle routine automation tasks."
+    },
+    {
+      "id": "designer",
+      "name": "Designer",
+      "role": "UI/UX & Design System",
+      "persona": "Aesthetic, detail-oriented, design-system-driven craftsperson",
+      "command": "/design",
+      "model": "balanced",
+      "triggerEvents": ["entry-created"],
+      "matchCategories": ["sprint", "dod"],
+      "matchPriorities": ["critical", "high", "medium"],
+      "capabilities": ["ui-design", "design-tokens", "component-styling", "visual-qa", "accessibility"],
+      "autoActivate": false,
+      "systemPrompt": "You are the Designer agent. Implement UI components, maintain the design system, ensure visual consistency, and translate designs into production code."
     }
   ],
   "rules": [
@@ -315,7 +329,8 @@
   "joiningPatterns": [
     { "id": "build-review", "agents": ["developer", "reviewer"], "flow": "sequential" },
     { "id": "design-build", "agents": ["architect", "developer"], "flow": "sequential" },
+    { "id": "design-implement", "agents": ["designer", "developer"], "flow": "sequential" },
     { "id": "research-build", "agents": ["researcher", "developer"], "flow": "pipeline" },
-    { "id": "full-pipeline", "agents": ["architect", "developer", "reviewer"], "flow": "pipeline" }
+    { "id": "full-pipeline", "agents": ["architect", "designer", "developer", "reviewer"], "flow": "pipeline" }
   ]
 }

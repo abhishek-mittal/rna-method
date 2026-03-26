@@ -29,3 +29,4 @@ join,dtb,Design-to-Build,twilight → samba → twilight,1.0.0,stable
 join,rtc,Research-to-Content,shino → shuhari-research-curator,1.0.0,stable
 join,ff,Full Feature,riko → shino → samba → twilight,1.0.0,stable
 join,rds,R&D Research Synthesis,lab → shino → lab → shuhari-research-curator,1.0.0,stable
+join,design-implement,Design-Implement,designer → developer — UI design then implementation,1.2.0,stable

@@ -68,6 +68,16 @@
       "matchCategories": ["weekly", "async"],
       "matchKeywords": ["ops", "automation", "status", "report", "daily", "deploy"],
       "autoApprove": true
+    },
+    {
+      "id": "designer",
+      "name": "Designer",
+      "role": "UI/UX & Design System",
+      "modelTier": "balanced",
+      "file": ".github/agents/designer.agent.md",
+      "matchCategories": ["sprint", "dod"],
+      "matchKeywords": ["design", "ui", "ux", "component", "style", "token", "layout", "figma", "responsive", "accessibility"],
+      "autoApprove": true
     }
   ],
   "rules": [
