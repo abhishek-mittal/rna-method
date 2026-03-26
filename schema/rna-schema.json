@@ -4,7 +4,7 @@
   "title": "RNA + Pluribus Agent Collective Schema",
   "description": "Platform-neutral schema for defining multi-agent orchestration with Reusable Neural Activators (RNA). This schema is the canonical format; per-platform adapters generate native configuration files.",
   "version": "1.0.0",
-  "rnaVersion": "1.1.0",
+  "rnaVersion": "1.2.0",
   "meta": {
     "director": "Director",
     "projectName": "my-project",
@@ -19,6 +19,27 @@
     "platform": "",
     "generatedAt": "2026-03-08"
   },
+  "outputFormat": "verbose",
+  "resilience": {
+    "enabled": true,
+    "maxRetries": 3,
+    "failureLogDir": "_memory/failures/"
+  },
+  "lifecycle": {
+    "onSessionStart": [
+      "load-progressive-context",
+      "check-pending-signals"
+    ],
+    "onToolComplete": [
+      "capture-observation"
+    ],
+    "onSessionEnd": [
+      "compress-observations",
+      "write-session-log",
+      "update-timeline"
+    ]
+  },
+  "registry": "registry/capabilities.csv",
   "agents": [
     {
       "id": "director",
@@ -187,6 +208,14 @@
       "ownedBy": "researcher",
       "triggerKeywords": ["research", "investigate", "find out", "compare libraries", "best practice"],
       "subFiles": ["research-template.md"]
+    },
+    {
+      "id": "design-quality",
+      "name": "Design Quality",
+      "description": "Impeccable-style design audit: audit, normalize, polish, critique, distill, harden commands for UI/UX quality",
+      "ownedBy": "developer",
+      "triggerKeywords": ["audit UI", "normalize", "polish", "critique", "distill", "harden", "design quality"],
+      "subFiles": ["design-quality-commands.md"]
     }
   ],
   "commands": [
@@ -197,7 +226,13 @@
     { "id": "ops", "agentId": "ops", "description": "Invoke Ops agent" },
     { "id": "director", "agentId": "director", "description": "Invoke Director agent" },
     { "id": "join", "agentId": "director", "description": "Initiate a multi-agent join" },
-    { "id": "update-timeline", "agentId": "director", "description": "Update timeline.json hub" }
+    { "id": "update-timeline", "agentId": "director", "description": "Update timeline.json hub" },
+    { "id": "loop", "agentId": null, "description": "Autonomous iteration: modify-verify-keep loop until metric is met" },
+    { "id": "recall", "agentId": null, "description": "Search compacted context and observation history by keyword/topic" },
+    { "id": "toon", "agentId": null, "description": "Toggle token-efficient output mode (TOON encoding)" },
+    { "id": "compress", "agentId": null, "description": "Compress recent session observations into structured learnings" },
+    { "id": "search", "agentId": null, "description": "Search agent knowledge bases and memory using text matching" },
+    { "id": "upgrade", "agentId": null, "description": "Upgrade RNA collective to latest release while preserving project customizations" }
   ],
   "hooks": [
     {
@@ -221,6 +256,30 @@
       "event": "rna-updated",
       "description": "Auto-validate registry when RNA files change",
       "activates": ["validate-registry"],
+      "directorApproval": false,
+      "enabled": true
+    },
+    {
+      "id": "on-session-start",
+      "event": "session-start",
+      "description": "Inject progressive context index at session start",
+      "activates": ["load-progressive-context"],
+      "directorApproval": false,
+      "enabled": true
+    },
+    {
+      "id": "on-tool-complete",
+      "event": "tool-complete",
+      "description": "Capture observation after tool executions (async, non-blocking)",
+      "activates": ["capture-observation"],
+      "directorApproval": false,
+      "enabled": false
+    },
+    {
+      "id": "on-session-end",
+      "event": "session-end",
+      "description": "Compress observations and write session log at session close",
+      "activates": ["compress-observations"],
       "directorApproval": false,
       "enabled": true
     }

@@ -1,0 +1,31 @@
+type,id,name,description,since,status
+command,setup,/rna.setup,Full interactive setup — reads project & writes all RNA files,1.0.0,stable
+command,update,/rna.update,Re-run setup preserving existing customizations,1.0.0,stable
+command,resync,/rna.resync,Re-read project source and update timeline.json,1.0.0,stable
+command,signal,/rna.signal,Append a signal entry to agent-context.json signalQueue[],1.0.0,stable
+command,status,/rna.status,Print team status table from activity.json files,1.0.0,stable
+command,compact,/rna.compact,Compact session context to _memory/context/ summary,1.0.0,stable
+command,gui,/rna.gui,Print instructions to start RNA Studio,1.0.0,stable
+command,version,/rna.version,Print installed RNA Method and schema versions,1.0.0,stable
+command,help,/rna.help,Print the command reference table,1.0.0,stable
+command,loop,/rna.loop,Start an autonomous iteration loop with goal/metric/guard,1.2.0,stable
+command,recall,/rna.recall,Search memory index and observations by keyword,1.2.0,stable
+command,toon,/rna.toon,Toggle output format between verbose and TOON,1.2.0,stable
+command,compress,/rna.compress,Compress raw observations into structured entries,1.2.0,stable
+command,search,/rna.search,Search knowledge bases and memory files by keyword,1.2.0,stable
+command,upgrade,/rna.upgrade,Upgrade agents to latest RNA release preserving customizations,1.2.0,stable
+skill,code-quality,Code Quality,Lint/review/test best practices and code health,1.0.0,stable
+skill,project-context,Project Context,Reads project files and infers stack/domain/phase,1.0.0,stable
+skill,session-memory,Session Memory,Context compaction and session summary writing,1.0.0,stable
+skill,design-quality,Design Quality,UI audit/normalize/polish/critique/distill/harden,1.2.0,stable
+hook,on-handoff,On Handoff,Fires when agent delegates to another agent,1.0.0,stable
+hook,on-join-start,On Join Start,Fires when a joining pattern begins execution,1.0.0,stable
+hook,on-join-end,On Join End,Fires when a joining pattern completes,1.0.0,stable
+hook,on-session-start,On Session Start,Fires at the beginning of every agent session,1.2.0,stable
+hook,on-tool-complete,On Tool Complete,Fires after each tool call for observation capture,1.2.0,stable
+hook,on-session-end,On Session End,Fires at the end of every agent session,1.2.0,stable
+join,cdc,Continuous Dev Cycle,conductor → riko → twilight → conductor → cloud,1.0.0,stable
+join,dtb,Design-to-Build,twilight → samba → twilight,1.0.0,stable
+join,rtc,Research-to-Content,shino → shuhari-research-curator,1.0.0,stable
+join,ff,Full Feature,riko → shino → samba → twilight,1.0.0,stable
+join,rds,R&D Research Synthesis,lab → shino → lab → shuhari-research-curator,1.0.0,stable

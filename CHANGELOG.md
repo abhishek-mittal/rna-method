@@ -7,6 +7,38 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — 2026-03-26
+
+### Added
+- 6 new `/rna.*` commands: `loop`, `recall`, `toon`, `compress`, `search`, `upgrade` — total command count: 15
+- `/rna.upgrade` (alias: `/rna.resynk`) — snapshot current customizations, show version delta, update config, instruct adapter re-run while preserving project-level agent names, personas, rules, skills, and memory
+- `/rna.loop <goal>` — autonomous iteration workspace with goal, metric, guard, and max-iteration config
+- `/rna.recall <query>` — search memory observations index and timeline commits by keyword
+- `/rna.toon` — toggle output format between verbose (default) and TOON (compressed abbreviations)
+- `/rna.compress` — compress raw observation TSV into structured JSON, archive raw data, start fresh index
+- `/rna.search <query>` — full-text search across all `_memory/` subdirectories (context, agents, rna-method, observations)
+- `schema/rna-schema.json` — new top-level fields: `outputFormat`, `resilience{}`, `lifecycle{}`, `registry`
+- `schema/rna-schema.json` — 3 new lifecycle hooks: `on-session-start`, `on-tool-complete`, `on-session-end`
+- `schema/rna-schema.json` — new skill: `design-quality` (audit UI, normalize, polish, critique, distill, harden)
+- `schema/rna-schema-definition.json` — expanded with all v1.2.0 optional fields while maintaining full backward compatibility with v1.0 schemas
+- `templates/_base-agent.md` — 6 new §sections: `§lifecycle-hooks`, `§resilience` (Ralph Loop), `§progressive-context`, `§output-modes`, `§loop-protocol`, `§upgrade-protocol`
+- `registry/capabilities.csv` — CSV-driven single-source-of-truth for all RNA capabilities (commands, skills, hooks, joining patterns)
+- `templates/skill-types/` — 3 skill archetype templates: `advisory.md`, `generator.md`, `loop.md`
+
+### Changed
+- `schema/rna-schema.json` — `rnaVersion` bumped from `1.1.0` → `1.2.0`
+- `schema/rna-schema-definition.json` — relaxed `meta.platform` from enum to plain string for custom platform support
+- `schema/rna-schema-definition.json` — relaxed `joiningPatterns` required fields (removed `file` from required)
+- `tools/rna-commands.js` — help table expanded from 9 → 15 commands, router extended with 6 new cases + `resynk` alias
+- `docs/rna-commands.md` — command reference table and agent instruction block updated with all v1.2.0 commands
+
+### Research
+- Competitive research audit across 14 repos (see `r&d/rna-enhancement-audit/`) — 22 actionable proposals distilled into 4 tiers
+- Key influences: fabric patterns CLI, agentic-cursorrules, claude-engineer, cursor-boost, Agentfile spec, agentstack
+- Backward compatibility validated: all new schema fields are optional, no breaking changes to existing collectives
+
+---
+
 ## [1.1.0] — 2026-03-20
 
 ### Added

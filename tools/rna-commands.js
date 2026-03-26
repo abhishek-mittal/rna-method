@@ -12,6 +12,12 @@
  *   node tools/rna-commands.js /rna.resync
  *   node tools/rna-commands.js "/rna.signal My task is done"
  *   node tools/rna-commands.js /rna.gui
+ *   node tools/rna-commands.js "/rna.loop Reduce bundle size below 200KB"
+ *   node tools/rna-commands.js "/rna.recall schema update"
+ *   node tools/rna-commands.js /rna.toon
+ *   node tools/rna-commands.js /rna.compress
+ *   node tools/rna-commands.js "/rna.search design tokens"
+ *   node tools/rna-commands.js /rna.upgrade
  *   node tools/rna-commands.js /rna.setup
  *   node tools/rna-commands.js /rna.update
  */
@@ -58,17 +64,23 @@ function writeJSON(filePath, data) {
 // ─── Command: /rna.help ───────────────────────────────────────────────────────
 
 function cmdHelp() {
-  const COL = 26;
+  const COL = 28;
   const rows = [
-    ['/rna.setup',        'Full interactive setup: reads project, asks questions, writes all RNA files'],
-    ['/rna.update',       'Re-run setup preserving existing customizations'],
-    ['/rna.resync',       'Re-read project source (package.json, git log) and update timeline.json'],
-    ['/rna.signal <msg>', 'Append a signal entry to agent-context.json signalQueue[]'],
-    ['/rna.status',       'Print team status table from agent-context.json + activity.json files'],
-    ['/rna.compact',      'Compact current session context to _memory/context/<date>_session-summary.md'],
-    ['/rna.gui',          'Print instructions to start RNA Studio and the studio URL'],
-    ['/rna.version',      'Print installed RNA Method version and schema version'],
-    ['/rna.help',         'Print this table'],
+    ['/rna.setup',          'Full interactive setup: reads project, asks questions, writes all RNA files'],
+    ['/rna.update',         'Re-run setup preserving existing customizations'],
+    ['/rna.resync',         'Re-read project source (package.json, git log) and update timeline.json'],
+    ['/rna.signal <msg>',   'Append a signal entry to agent-context.json signalQueue[]'],
+    ['/rna.status',         'Print team status table from agent-context.json + activity.json files'],
+    ['/rna.compact',        'Compact current session context to _memory/context/<date>_session-summary.md'],
+    ['/rna.gui',            'Print instructions to start RNA Studio and the studio URL'],
+    ['/rna.version',        'Print installed RNA Method version and schema version'],
+    ['/rna.loop <goal>',    'Start an autonomous iteration loop with goal, metric, and guard'],
+    ['/rna.recall <query>', 'Search memory index and observations for matching entries'],
+    ['/rna.toon',           'Toggle output format between verbose and TOON (compressed)'],
+    ['/rna.compress',       'Compress raw observations into structured memory entries'],
+    ['/rna.search <query>', 'Search knowledge bases and memory files by keyword'],
+    ['/rna.upgrade',        'Upgrade agents to latest RNA release, preserving project customizations'],
+    ['/rna.help',           'Print this table'],
   ];
 
   console.log('\n' + c('bold', 'RNA Method — Command Reference') + '\n');
@@ -283,6 +295,327 @@ function cmdGui() {
   console.log('');
 }
 
+// ─── Command: /rna.loop <goal> ────────────────────────────────────────────────
+
+function cmdLoop(args) {
+  const goal = args.join(' ').trim();
+
+  if (!goal) {
+    console.log(c('yellow', '\n  Usage: /rna.loop <goal description>\n'));
+    console.log('  Example: /rna.loop "Reduce bundle size below 200KB"\n');
+    return;
+  }
+
+  const loopsDir = path.join(ROOT, '_memory', 'loops');
+  const ts       = new Date().toISOString();
+  const slug     = goal.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
+  const loopFile = path.join(loopsDir, `${ts.slice(0, 10)}_${slug}.json`);
+
+  const loopConfig = {
+    goal,
+    metric:        '(define measurable target)',
+    guard:         '(define stop condition)',
+    maxIterations: 5,
+    iterations:    [],
+    status:        'initialized',
+    createdAt:     ts,
+  };
+
+  writeJSON(loopFile, loopConfig);
+
+  console.log(c('green', '\n  ✓ Loop workspace created'));
+  console.log(`  ${c('bold', 'Goal')}:  ${goal}`);
+  console.log(`  ${c('bold', 'File')}:  ${path.relative(ROOT, loopFile)}`);
+  console.log(`  ${c('bold', 'Max')}:   ${loopConfig.maxIterations} iterations`);
+  console.log(`\n  Edit the file to set ${c('cyan', 'metric')} and ${c('cyan', 'guard')} before starting.\n`);
+}
+
+// ─── Command: /rna.recall <query> ────────────────────────────────────────────
+
+function cmdRecall(args) {
+  const query = args.join(' ').trim().toLowerCase();
+
+  if (!query) {
+    console.log(c('yellow', '\n  Usage: /rna.recall <search terms>\n'));
+    return;
+  }
+
+  const indexPath = path.join(ROOT, '_memory', 'observations', 'index.tsv');
+  const results   = [];
+
+  if (fs.existsSync(indexPath)) {
+    const lines = fs.readFileSync(indexPath, 'utf8').split('\n').filter(Boolean);
+    for (const line of lines) {
+      if (line.toLowerCase().includes(query)) {
+        results.push(line);
+      }
+    }
+  }
+
+  // Also search timeline for matching entries
+  const timelinePath = path.join(ROOT, '_memory', 'rna-method', 'timeline.json');
+  const timeline     = readJSON(timelinePath);
+  const timelineHits = [];
+
+  if (timeline?.projectContext?.recentCommits) {
+    for (const commit of timeline.projectContext.recentCommits) {
+      if (commit.toLowerCase().includes(query)) {
+        timelineHits.push(commit);
+      }
+    }
+  }
+
+  console.log('');
+  if (results.length === 0 && timelineHits.length === 0) {
+    console.log(c('yellow', `  No matches for "${query}"`));
+  } else {
+    if (results.length > 0) {
+      console.log(c('bold', `  Observations (${results.length} matches):`));
+      for (const r of results.slice(0, 20)) {
+        console.log(`  ${r}`);
+      }
+    }
+    if (timelineHits.length > 0) {
+      console.log(c('bold', `  Timeline commits (${timelineHits.length} matches):`));
+      for (const h of timelineHits.slice(0, 10)) {
+        console.log(`  ${h}`);
+      }
+    }
+  }
+  console.log('');
+}
+
+// ─── Command: /rna.toon ──────────────────────────────────────────────────────
+
+function cmdToon() {
+  const configPath = path.join(ROOT, '.rna', 'config.json');
+  const config     = readJSON(configPath) ?? {};
+
+  const current = config.outputFormat ?? 'verbose';
+  const next    = current === 'verbose' ? 'toon' : 'verbose';
+
+  config.outputFormat = next;
+  writeJSON(configPath, config);
+
+  console.log(c('green', `\n  ✓ Output format toggled: ${c('cyan', current)} → ${c('bold', next)}\n`));
+
+  if (next === 'toon') {
+    console.log('  Agents will use compressed TOON abbreviations (see §output-modes).\n');
+  } else {
+    console.log('  Agents will use full verbose output.\n');
+  }
+}
+
+// ─── Command: /rna.compress ──────────────────────────────────────────────────
+
+function cmdCompress() {
+  const obsDir   = path.join(ROOT, '_memory', 'observations');
+  const indexTsv = path.join(obsDir, 'index.tsv');
+
+  if (!fs.existsSync(indexTsv)) {
+    console.log(c('yellow', '\n  No observations index found at _memory/observations/index.tsv'));
+    console.log('  Run sessions with lifecycle hooks enabled to generate observations.\n');
+    return;
+  }
+
+  const lines   = fs.readFileSync(indexTsv, 'utf8').split('\n').filter(Boolean);
+  const ts      = new Date().toISOString();
+  const outFile = path.join(obsDir, `${ts.slice(0, 10)}_compressed.json`);
+
+  const entries = lines.map(line => {
+    const parts = line.split('\t');
+    return {
+      timestamp: parts[0] ?? '',
+      agent:     parts[1] ?? '',
+      type:      parts[2] ?? '',
+      summary:   parts.slice(3).join('\t') ?? '',
+    };
+  });
+
+  const compressed = {
+    compressedAt: ts,
+    entryCount:   entries.length,
+    entries,
+  };
+
+  writeJSON(outFile, compressed);
+
+  // Archive the raw TSV
+  const archivePath = path.join(obsDir, `${ts.slice(0, 10)}_index-archive.tsv`);
+  fs.renameSync(indexTsv, archivePath);
+
+  // Start fresh index
+  fs.writeFileSync(indexTsv, '', 'utf8');
+
+  console.log(c('green', '\n  ✓ Observations compressed'));
+  console.log(`  ${c('bold', 'Entries')}:    ${entries.length}`);
+  console.log(`  ${c('bold', 'Output')}:     ${path.relative(ROOT, outFile)}`);
+  console.log(`  ${c('bold', 'Archived')}:   ${path.relative(ROOT, archivePath)}`);
+  console.log(`  ${c('bold', 'New index')}: fresh index.tsv started\n`);
+}
+
+// ─── Command: /rna.search <query> ────────────────────────────────────────────
+
+function cmdSearch(args) {
+  const query = args.join(' ').trim().toLowerCase();
+
+  if (!query) {
+    console.log(c('yellow', '\n  Usage: /rna.search <keywords>\n'));
+    return;
+  }
+
+  const searchDirs = [
+    path.join(ROOT, '_memory', 'context'),
+    path.join(ROOT, '_memory', 'agents'),
+    path.join(ROOT, '_memory', 'rna-method'),
+    path.join(ROOT, '_memory', 'observations'),
+  ];
+
+  const hits = [];
+
+  for (const dir of searchDirs) {
+    if (!fs.existsSync(dir)) continue;
+
+    const walk = (d) => {
+      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) {
+          walk(full);
+        } else if (/\.(json|md|tsv|txt)$/i.test(entry.name)) {
+          try {
+            const content = fs.readFileSync(full, 'utf8');
+            const lower   = content.toLowerCase();
+            const idx     = lower.indexOf(query);
+            if (idx !== -1) {
+              // Extract a snippet around the match
+              const start   = Math.max(0, idx - 40);
+              const end     = Math.min(content.length, idx + query.length + 60);
+              const snippet = content.slice(start, end).replace(/\n/g, ' ').trim();
+              hits.push({
+                file:    path.relative(ROOT, full),
+                snippet: snippet.length > 100 ? snippet.slice(0, 100) + '…' : snippet,
+              });
+            }
+          } catch {
+            // skip unreadable files
+          }
+        }
+      }
+    };
+    walk(dir);
+  }
+
+  console.log('');
+  if (hits.length === 0) {
+    console.log(c('yellow', `  No matches for "${query}" in _memory/`));
+  } else {
+    console.log(c('bold', `  ${hits.length} match(es) for "${query}":\n`));
+    for (const h of hits.slice(0, 20)) {
+      console.log(`  ${c('cyan', h.file)}`);
+      console.log(`    ${c('gray', h.snippet)}`);
+    }
+    if (hits.length > 20) {
+      console.log(c('gray', `\n  … and ${hits.length - 20} more`));
+    }
+  }
+  console.log('');
+}
+
+// ─── Command: /rna.upgrade ───────────────────────────────────────────────────
+
+function cmdUpgrade() {
+  console.log('\n' + c('bold', '  RNA Method — Upgrade Protocol') + '\n');
+
+  const configPath = path.join(ROOT, '.rna', 'config.json');
+  const config     = readJSON(configPath);
+
+  if (!config) {
+    console.log(c('red', '  .rna/config.json not found — run /rna.setup first.\n'));
+    return;
+  }
+
+  const currentVersion = config.rnaVersion ?? config.version ?? '(unknown)';
+  const schemaPath     = path.join(ROOT, 'schema', 'rna-schema.json');
+  const schema         = readJSON(schemaPath);
+  const latestVersion  = schema?.rnaVersion ?? schema?.version ?? '(unknown)';
+
+  // Step 1: Snapshot current customizations
+  const snapshotDir = path.join(ROOT, '_memory', 'upgrade-snapshots');
+  const ts          = new Date().toISOString();
+  const snapshotId  = ts.slice(0, 10) + '_' + ts.slice(11, 19).replace(/:/g, '');
+  const snapshotOut = path.join(snapshotDir, snapshotId);
+
+  fs.mkdirSync(snapshotOut, { recursive: true });
+
+  // Capture config
+  writeJSON(path.join(snapshotOut, 'config.json'), config);
+
+  // Capture receptors (agent definitions)
+  const receptorsPath = path.join(ROOT, '_memory', 'rna-method', 'receptors.json');
+  const receptors     = readJSON(receptorsPath);
+  if (receptors) {
+    writeJSON(path.join(snapshotOut, 'receptors.json'), receptors);
+  }
+
+  // Capture timeline
+  const timelinePath = path.join(ROOT, '_memory', 'rna-method', 'timeline.json');
+  const timeline     = readJSON(timelinePath);
+  if (timeline) {
+    writeJSON(path.join(snapshotOut, 'timeline.json'), timeline);
+  }
+
+  // Capture agent-context
+  const agentCtxPath = path.join(ROOT, '_memory', 'rna-method', 'agent-context.json');
+  const agentCtx     = readJSON(agentCtxPath);
+  if (agentCtx) {
+    writeJSON(path.join(snapshotOut, 'agent-context.json'), agentCtx);
+  }
+
+  console.log(c('green', '  ✓ Step 1: Snapshot captured'));
+  console.log(`    ${c('bold', 'Location')}: ${path.relative(ROOT, snapshotOut)}`);
+  console.log(`    ${c('bold', 'Files')}:    config, receptors, timeline, agent-context\n`);
+
+  // Step 2: Show version delta
+  console.log(`  ${c('bold', 'Step 2: Version delta')}`);
+  console.log(`    ${c('bold', 'Current')}: ${c('yellow', currentVersion)}`);
+  console.log(`    ${c('bold', 'Latest')}:  ${c('cyan', latestVersion)}\n`);
+
+  // Step 3: Update config version
+  config.rnaVersion        = latestVersion;
+  config.lastUpgrade       = ts;
+  config.upgradeSnapshotId = snapshotId;
+  writeJSON(configPath, config);
+
+  console.log(c('green', '  ✓ Step 3: Config updated'));
+  console.log(`    rnaVersion → ${latestVersion}\n`);
+
+  // Step 4: Instruction for adapter re-run
+  const adapter = config.adapter ?? config.adapters?.[0] ?? '(unknown)';
+  console.log(`  ${c('bold', 'Step 4: Re-run your platform adapter to pick up new features')}`);
+  console.log(`    Platform: ${c('cyan', adapter)}`);
+  console.log(`    Run: ${c('cyan', 'node tools/init.js')} (select "update" when prompted)\n`);
+
+  // Step 5: Summary
+  console.log(c('green', '  ✓ Upgrade preparation complete'));
+  console.log('    Your project customizations (agent names, personas, rules, memory)');
+  console.log(`    are preserved in the snapshot at ${c('cyan', path.relative(ROOT, snapshotOut))}.`);
+  console.log('    The adapter re-run will merge latest RNA features while keeping your config.\n');
+
+  // Step 6: Write upgrade log
+  const upgradeLogPath = path.join(ROOT, '_memory', 'rna-method', 'upgrade-log.json');
+  const upgradeLog     = readJSON(upgradeLogPath) ?? { upgrades: [] };
+  upgradeLog.upgrades.push({
+    from:       currentVersion,
+    to:         latestVersion,
+    timestamp:  ts,
+    snapshotId,
+    adapter,
+  });
+  writeJSON(upgradeLogPath, upgradeLog);
+
+  console.log(c('gray', `  Upgrade logged to _memory/rna-method/upgrade-log.json\n`));
+}
+
 // ─── Command: /rna.setup | /rna.update ───────────────────────────────────────
 
 function cmdDelegateToInit(name) {
@@ -312,15 +645,22 @@ function main() {
     : process.argv.slice(3);
 
   switch (cmd) {
-    case 'help':    cmdHelp();                    break;
-    case 'version': cmdVersion();                 break;
-    case 'status':  cmdStatus();                  break;
-    case 'signal':  cmdSignal(trailingArgs);       break;
-    case 'compact': cmdCompact();                 break;
-    case 'resync':  cmdResync();                  break;
-    case 'gui':     cmdGui();                     break;
-    case 'setup':   cmdDelegateToInit('setup');   break;
-    case 'update':  cmdDelegateToInit('update');  break;
+    case 'help':     cmdHelp();                    break;
+    case 'version':  cmdVersion();                 break;
+    case 'status':   cmdStatus();                  break;
+    case 'signal':   cmdSignal(trailingArgs);      break;
+    case 'compact':  cmdCompact();                 break;
+    case 'resync':   cmdResync();                  break;
+    case 'gui':      cmdGui();                     break;
+    case 'loop':     cmdLoop(trailingArgs);        break;
+    case 'recall':   cmdRecall(trailingArgs);      break;
+    case 'toon':     cmdToon();                    break;
+    case 'compress': cmdCompress();                break;
+    case 'search':   cmdSearch(trailingArgs);      break;
+    case 'upgrade':  cmdUpgrade();                 break;
+    case 'resynk':   cmdUpgrade();                 break;  // alias
+    case 'setup':    cmdDelegateToInit('setup');   break;
+    case 'update':   cmdDelegateToInit('update');  break;
     default:
       console.log(c('red', `\n  Unknown command: /rna.${cmd}\n`));
       cmdHelp();

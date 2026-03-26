@@ -44,6 +44,12 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
 | `/rna.compact` | Compact current session context to `_memory/context/<date>_session-summary.md` |
 | `/rna.gui` | Print instructions to start RNA Studio and the studio URL |
 | `/rna.version` | Print installed RNA Method version and schema version |
+| `/rna.loop <goal>` | Start an autonomous iteration loop with goal, metric, and guard (v1.2.0) |
+| `/rna.recall <query>` | Search memory index and observations for matching entries (v1.2.0) |
+| `/rna.toon` | Toggle output format between verbose and TOON compressed mode (v1.2.0) |
+| `/rna.compress` | Compress raw observations into structured memory entries (v1.2.0) |
+| `/rna.search <query>` | Search knowledge bases and memory files by keyword (v1.2.0) |
+| `/rna.upgrade` | Upgrade agents to latest RNA release, preserving project customizations (v1.2.0) |
 | `/rna.help` | Print this table |
 
 ---
@@ -308,6 +314,12 @@ Print the following table exactly:
 /rna.compact           Compress session to _memory/context/ summary file
 /rna.gui               Print instructions to start RNA Studio
 /rna.version           Print installed RNA Method and schema versions
+/rna.loop <goal>       Start an autonomous iteration loop
+/rna.recall <query>    Search memory index and observations
+/rna.toon              Toggle output format (verbose ↔ TOON)
+/rna.compress          Compress raw observations into structured entries
+/rna.search <query>    Search knowledge bases and memory files
+/rna.upgrade           Upgrade to latest RNA release (preserves customizations)
 /rna.help              Print this table
 ─────────────────────────────────────────────────────────────────────────────
 Type any command above in your agent chat to execute.
@@ -316,6 +328,128 @@ Type any command above in your agent chat to execute.
 **Reads:** nothing  
 **Writes:** nothing  
 **Prints:** help table
+
+---
+
+### `/rna.loop <goal>` *(v1.2.0)*
+
+**Purpose:** Start an autonomous iteration loop that works toward a measurable goal with guard rails.
+
+**Steps:**
+
+1. Parse the `<goal>` argument — this is the natural language goal statement
+2. Create `_memory/loops/<date>_<slug>.json` with structure:
+   ```json
+   {
+     "goal": "<goal>",
+     "metric": "(define measurable target)",
+     "guard": "(define stop condition)",
+     "maxIterations": 5,
+     "iterations": [],
+     "status": "initialized",
+     "createdAt": "<ISO 8601>"
+   }
+   ```
+3. Print the loop workspace location and instruct the agent to edit `metric` and `guard` before iterating
+4. When iterating: plan → execute → measure → decide (keep/rollback) → log → repeat until guard met
+
+**Reads:** nothing  
+**Writes:** `_memory/loops/<date>_<slug>.json`  
+**Prints:** loop workspace confirmation with file path
+
+---
+
+### `/rna.recall <query>` *(v1.2.0)*
+
+**Purpose:** Search memory index and observation logs for entries matching the query keywords.
+
+**Steps:**
+
+1. Read `_memory/observations/index.tsv` — search each line for the query string (case-insensitive)
+2. Search `_memory/rna-method/timeline.json` recent commits for matching entries
+3. Print matching entries (max 20 from observations, max 10 from timeline)
+4. If no matches: print `No matches for "<query>"`
+
+**Reads:** `_memory/observations/index.tsv`, `_memory/rna-method/timeline.json`  
+**Writes:** nothing  
+**Prints:** matching observation entries and timeline commits
+
+---
+
+### `/rna.toon` *(v1.2.0)*
+
+**Purpose:** Toggle the output format between `verbose` (full prose) and `toon` (compressed abbreviations using the TOON registry).
+
+**Steps:**
+
+1. Read `.rna/config.json` — get current `outputFormat` (default: `verbose`)
+2. Toggle: `verbose` → `toon`, `toon` → `verbose`
+3. Write updated `.rna/config.json`
+4. Print: `✓ Output format toggled: <old> → <new>`
+
+**Reads:** `.rna/config.json`  
+**Writes:** `.rna/config.json` (`outputFormat` field)  
+**Prints:** toggle confirmation
+
+---
+
+### `/rna.compress` *(v1.2.0)*
+
+**Purpose:** Compress raw observations (TSV) into structured JSON entries and start a fresh observation index.
+
+**Steps:**
+
+1. Read `_memory/observations/index.tsv`
+2. Parse each line (tab-separated: timestamp, agent, type, summary)
+3. Write structured JSON to `_memory/observations/<date>_compressed.json`
+4. Archive the raw TSV to `_memory/observations/<date>_index-archive.tsv`
+5. Start a fresh empty `index.tsv`
+6. Print entry count, output path, and archive path
+
+**Reads:** `_memory/observations/index.tsv`  
+**Writes:** `_memory/observations/<date>_compressed.json`, archive, fresh index  
+**Prints:** compression summary
+
+---
+
+### `/rna.search <query>` *(v1.2.0)*
+
+**Purpose:** Full-text search across all memory files — context summaries, agent data, timeline, and observations.
+
+**Steps:**
+
+1. Recursively search these directories for `.json`, `.md`, `.tsv`, `.txt` files:
+   - `_memory/context/`
+   - `_memory/agents/`
+   - `_memory/rna-method/`
+   - `_memory/observations/`
+2. For each file, check if the content contains the query string (case-insensitive)
+3. Extract a snippet (±50 chars around the first match) for context
+4. Print results: file path + snippet (max 20 results)
+
+**Reads:** all `_memory/` subdirectories  
+**Writes:** nothing  
+**Prints:** search results with file paths and snippets
+
+---
+
+### `/rna.upgrade` *(v1.2.0)*
+
+**Purpose:** Upgrade the project's RNA installation to the latest release while preserving all project-level customizations (agent names, personas, rules, skills, memory).
+
+**Alias:** `/rna.resynk`
+
+**Steps:**
+
+1. **Snapshot** — Save current config, receptors, timeline, and agent-context to `_memory/upgrade-snapshots/<id>/`
+2. **Version delta** — Show current vs latest RNA version
+3. **Update config** — Write new `rnaVersion`, `lastUpgrade`, and `upgradeSnapshotId` to `.rna/config.json`
+4. **Adapter re-run** — Instruct the user to run `node tools/init.js` (update mode) to regenerate platform files with new features while preserving agent customizations
+5. **Log** — Append upgrade entry to `_memory/rna-method/upgrade-log.json`
+
+**Reads:** `.rna/config.json`, `schema/rna-schema.json`, `_memory/rna-method/receptors.json`, `_memory/rna-method/timeline.json`, `_memory/rna-method/agent-context.json`  
+**Writes:** `_memory/upgrade-snapshots/<id>/` (snapshot), `.rna/config.json` (version bump), `_memory/rna-method/upgrade-log.json`  
+**Prints:** step-by-step upgrade progress
 
 ---
 
@@ -476,8 +610,69 @@ Print:
 /rna.compact           Compress session to _memory/context/ summary file
 /rna.gui               Print instructions to start RNA Studio
 /rna.version           Print installed RNA Method and schema versions
+/rna.loop <goal>       Start an autonomous iteration loop
+/rna.recall <query>    Search memory index and observations
+/rna.toon              Toggle output format (verbose ↔ TOON)
+/rna.compress          Compress raw observations into structured entries
+/rna.search <query>    Search knowledge bases and memory files
+/rna.upgrade           Upgrade to latest RNA release (preserves customizations)
 /rna.help              Print this table
 ─────────────────────────────────────────────────────────────────────────────
+
+---
+
+### /rna.loop <goal>
+
+1. Parse the `<goal>` argument
+2. Create `_memory/loops/<date>_<slug>.json` with: goal, metric (placeholder), guard (placeholder), maxIterations: 5
+3. Print the loop workspace location
+4. When iterating: plan → execute → measure → decide (keep/rollback) → log
+
+---
+
+### /rna.recall <query>
+
+1. Read `_memory/observations/index.tsv` and search for matching lines (case-insensitive)
+2. Search `timeline.json` recent commits for matches
+3. Print matching entries (max 20 observations, max 10 timeline)
+
+---
+
+### /rna.toon
+
+1. Read `.rna/config.json` → get `outputFormat` (default: `verbose`)
+2. Toggle: `verbose` → `toon`, `toon` → `verbose`
+3. Write updated config
+4. Print: `✓ Output format toggled: <old> → <new>`
+
+---
+
+### /rna.compress
+
+1. Read `_memory/observations/index.tsv`
+2. Parse TSV lines into structured entries
+3. Write `_memory/observations/<date>_compressed.json`
+4. Archive raw TSV, start fresh index
+
+---
+
+### /rna.search <query>
+
+1. Recursively search `_memory/context/`, `_memory/agents/`, `_memory/rna-method/`, `_memory/observations/`
+2. Match `.json`, `.md`, `.tsv`, `.txt` files containing the query (case-insensitive)
+3. Print file path + snippet for each match (max 20)
+
+---
+
+### /rna.upgrade
+
+Also available as `/rna.resynk`.
+
+1. Snapshot current config, receptors, timeline, agent-context to `_memory/upgrade-snapshots/<id>/`
+2. Show version delta (current vs latest)
+3. Update `.rna/config.json` with new rnaVersion
+4. Instruct user to re-run `node tools/init.js` to regenerate platform files with new features
+5. Log upgrade to `_memory/rna-method/upgrade-log.json`
 ```
 
 ---
