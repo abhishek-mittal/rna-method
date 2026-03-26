@@ -939,7 +939,7 @@ write_agent_file() {
       frontmatter="---
 name: \"${_effective_id}\"
 description: \"${role} — ${caps}\"
-trigger: \"@${_effective_id} <task>\"
+trigger: \"/${_effective_id} <task>\"
 tools:
 ${tools_yaml}
 ---"

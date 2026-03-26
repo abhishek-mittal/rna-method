@@ -91,9 +91,15 @@ It then rewrites `_memory/rna-method/receptors.json`, `timeline.json`, and re-ru
 
 ### Then — invoke your first agent
 
-```
-@developer Implement a user authentication endpoint
-```
+The trigger syntax depends on your platform:
+
+| Platform | Example |
+|---|---|
+| Copilot / Codex | `/developer Implement a user auth endpoint` |
+| Cursor | `@developer Implement a user auth endpoint` |
+| Claude Code | Assigned via Task API — no prefix needed |
+
+The install wizard sets `schema.meta.triggerPrefix` and rewrites all `agent.command` values automatically, so adapters emit the correct prefix for your platform.
 
 Your AI editor loads the Developer agent's identity, rules, and protocols automatically.
 

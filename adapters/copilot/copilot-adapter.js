@@ -104,7 +104,8 @@ const ROLE_TOOLS = {
 
 function mkFrontmatter(agent) {
   const effectiveName = (agent.name || agent.id).toLowerCase();
-  const triggerCmd = agent.command ? agent.command : `@${effectiveName}`;
+  // Copilot uses / prefix for triggers; agent.command already contains the platform prefix from init
+  const triggerCmd = agent.command ? agent.command : `/${effectiveName}`;
 
   // Role-appropriate tools (schema-level agent.tools overrides; agent.mcpTools appends)
   const roleTools  = ROLE_TOOLS[agent.id] || BASE_TOOLS;

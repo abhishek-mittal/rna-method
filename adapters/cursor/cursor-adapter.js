@@ -27,6 +27,16 @@ const OUTPUT_DIR  = process.argv[3] || path.join(process.cwd(), '.cursor');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Ensure agent command uses the @ prefix for Cursor.
+ * The schema may contain / prefix (Copilot default) if not rewritten by init.
+ */
+function cursorCommand(agent) {
+  const cmd = agent.command || agent.id;
+  const base = cmd.replace(/^[@/]/, '');
+  return `@${base}`;
+}
+
 function loadSchema(customPath) {
   const p = customPath || SCHEMA_PATH;
   if (!fs.existsSync(p)) {
@@ -70,7 +80,7 @@ function generateAgents(schema, outDir) {
       `- **Name**: ${agent.name}`,
       `- **Role**: ${agent.role}`,
       `- **Persona**: ${agent.persona}`,
-      `- **Command**: \`${agent.command}\``,
+      `- **Command**: \`${cursorCommand(agent)}\``,
       `- **Model tier**: ${agent.model}`,
       '',
       '## Capabilities',
@@ -86,7 +96,7 @@ function generateAgents(schema, outDir) {
 
     fs.writeFileSync(path.join(dir, filename), content, 'utf-8');
     registryLines.push(
-      `| ${i + 1} | **${agent.name}** | \`${filename}\` | ${agent.role} | \`${agent.command}\` | ${agent.model} |`
+      `| ${i + 1} | **${agent.name}** | \`${filename}\` | ${agent.role} | \`${cursorCommand(agent)}\` | ${agent.model} |`
     );
   });
 

@@ -54,6 +54,24 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
 
 ---
 
+## Agent Trigger Prefixes
+
+Agent commands (e.g., invoking the developer or reviewer) use **platform-specific prefixes** that are set during installation:
+
+| Platform | Prefix | Example | Set by |
+|---|---|---|---|
+| Copilot | `/` | `/dev <task>` | `init.js` rewrites `agent.command` + frontmatter `trigger:` |
+| Codex | `/` | `/dev <task>` | Codex adapter strips and re-adds `/` |
+| Cursor | `@` | `@developer <task>` | `init.js` rewrites `agent.command` + cursor adapter adds `@` |
+| Claude Code | *(none)* | Task routing, no prefix | Agents referenced by name in CLAUDE.md |
+| Kimi | *(none)* | Manual `@file` reference | No native trigger support |
+
+The prefix is stored in `schema.meta.triggerPrefix` and applied automatically during `rna.init` or `install.sh`. Adapters also apply fallback normalization — the Copilot adapter always uses `/`, the Cursor adapter always uses `@`, regardless of what the schema contains.
+
+> **Note:** `/rna.*` session commands (e.g., `/rna.setup`, `/rna.signal`) are convention-based text patterns, not platform triggers. They use `/` universally across all platforms because agents recognize them from their instruction files, not from platform APIs.
+
+---
+
 ## Command Specifications
 
 ### `/rna.setup`

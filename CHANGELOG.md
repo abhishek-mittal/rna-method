@@ -34,6 +34,9 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 - `discoveredMcpServers[]` field in `.rna/config.json` — records which MCP servers were found at install time
 - Copilot adapter fallback: auto-discovers MCP servers from `.vscode/mcp.json` when `mcpTools` not set in schema
 - `install.sh` bash-native MCP discovery — parses workspace MCP configs and appends tools to agent frontmatter
+- **Platform-specific agent trigger prefixes** — `/` for Copilot/Codex, `@` for Cursor, empty for Claude Code/Kimi
+- `schema.meta.triggerPrefix` field — stores the platform's trigger convention, used by init.js and all adapters
+- `init.js` rewrites `agent.command` per platform during Phase 3 setup — e.g., `/dev` for Copilot, `@dev` for Cursor
 
 ### Changed
 - Full collective expanded from 6 → 7 agents (added `designer`)
@@ -42,6 +45,10 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 - `adapters/copilot/copilot-adapter.js` — `run()` now auto-discovers MCP servers as fallback when `mcpTools` not in schema
 - `tools/install.sh` — copilot frontmatter generation now scans workspace MCP config and appends discovered tools per agent role
 - `docs/rna-commands.md` — `/rna.setup` protocol expanded from 7 → 8 steps (added step 6: Discover MCP servers and tools)
+- `docs/rna-commands.md` — added "Agent Trigger Prefixes" section documenting platform-specific trigger conventions
+- `adapters/copilot/copilot-adapter.js` — `mkFrontmatter()` fallback trigger now uses `/` prefix (was incorrectly `@`)
+- `adapters/cursor/cursor-adapter.js` — agent registry and identity now normalize commands to `@` prefix via `cursorCommand()` helper
+- `tools/install.sh` — copilot frontmatter trigger fixed from `@` to `/` prefix
 - `schema/rna-schema.json` — `rnaVersion` bumped from `1.1.0` → `1.2.0`
 - `schema/rna-schema-definition.json` — relaxed `meta.platform` from enum to plain string for custom platform support
 - `schema/rna-schema-definition.json` — relaxed `joiningPatterns` required fields (removed `file` from required)

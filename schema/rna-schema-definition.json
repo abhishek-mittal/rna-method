@@ -50,6 +50,11 @@
         "description":   { "type": "string" },
         "domain":        { "type": "string" },
         "deploymentTarget": { "type": "string" },
+        "triggerPrefix": {
+          "type": "string",
+          "enum": ["/", "@", ""],
+          "description": "Platform-specific prefix for agent trigger commands. / for Copilot/Codex, @ for Cursor, empty for Claude Code/Kimi."
+        },
         "stack": {
           "type": "object",
           "properties": {

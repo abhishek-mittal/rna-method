@@ -763,6 +763,22 @@ async function main() {
   schema.meta.deploymentTarget = deployTarget;
   schema.meta.platform         = platform;
   schema.meta.generatedAt      = new Date().toISOString();
+
+  // Platform-specific trigger prefix: / for copilot/codex, @ for cursor, empty for claude-code/kimi
+  const PLATFORM_TRIGGER_PREFIX = { copilot: '/', codex: '/', cursor: '@', 'claude-code': '', kimi: '' };
+  const triggerPrefix = PLATFORM_TRIGGER_PREFIX[platform] || '/';
+  schema.meta.triggerPrefix = triggerPrefix;
+
+  // Rewrite agent.command to use the platform-appropriate prefix
+  if (schema.agents) {
+    for (const agent of schema.agents) {
+      if (agent.command) {
+        const baseName = agent.command.replace(/^[@/]/, '');
+        agent.command = triggerPrefix + baseName;
+      }
+    }
+  }
+
   schema.agents           = schema.agents.filter(a => selectedAgents.includes(a.id));
   schema.rules            = schema.rules.filter(r => r.alwaysApply || selectedRules.includes(r.id));
 

@@ -16,6 +16,7 @@
       "extras": []
     },
     "deploymentTarget": "local",
+    "triggerPrefix": "/",
     "platform": "",
     "generatedAt": "2026-03-08"
   },
