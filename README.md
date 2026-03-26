@@ -16,6 +16,8 @@ You define the collective once in a single JSON schema. Platform adapters transl
 
 **No runtime infrastructure required.** No APIs, no message queues. Just your AI editor, a schema file, and a memory folder.
 
+**MCP auto-discovery.** During init, RNA scans your workspace for installed MCP servers (Figma, Tavily, Playwright, Snyk, etc.) and injects the right tools into each agent's configuration based on role relevance.
+
 ---
 
 ## Quick Start
@@ -186,6 +188,7 @@ rna-method/
 │
 ├── tools/
 │   ├── init.js                      # Node.js questionnaire (multi-adapter)
+│   ├── discover-tools.js            # MCP server & tool auto-discovery
 │   └── validate-registry.js         # Registry health checker
 │
 ├── docs/

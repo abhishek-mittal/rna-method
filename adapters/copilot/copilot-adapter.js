@@ -807,6 +807,35 @@ function generateInstructionFiles(schema, outDir) {
 function run(schemaPath, outDir) {
   const schema = loadSchema(schemaPath);
   const dir    = outDir || OUTPUT_DIR;
+
+  // Fallback MCP discovery: if no agents have mcpTools, try auto-discovery
+  const hasMcpTools = schema.agents.some(a => a.mcpTools && a.mcpTools.length > 0);
+  if (!hasMcpTools) {
+    try {
+      // Resolve project root from schema path or output dir
+      const projectRoot = schemaPath
+        ? path.resolve(path.dirname(schemaPath), '..')
+        : path.resolve(dir, '..');
+      const discoverPath = path.join(__dirname, '..', '..', 'tools', 'discover-tools');
+      if (fs.existsSync(discoverPath + '.js')) {
+        const { discover, computeAgentMcpTools } = require(discoverPath);
+        const result = discover('copilot', projectRoot);
+        if (result.serverCount > 0) {
+          const agentIds = schema.agents.map(a => a.id);
+          const agentMcpTools = computeAgentMcpTools(result, agentIds);
+          for (const agent of schema.agents) {
+            if (agentMcpTools[agent.id] && agentMcpTools[agent.id].length > 0) {
+              agent.mcpTools = agentMcpTools[agent.id];
+            }
+          }
+          console.log(`  ✓ Auto-discovered ${result.serverCount} MCP server(s)`);
+        }
+      }
+    } catch (_) {
+      // Discovery is best-effort; skip silently if unavailable
+    }
+  }
+
   generateAgents(schema, dir);
   generateCopilotInstructions(schema, dir);
   generateInstructionFiles(schema, dir);

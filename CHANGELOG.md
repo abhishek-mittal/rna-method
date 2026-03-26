@@ -28,10 +28,20 @@ Schema versioning follows [Semantic Versioning](https://semver.org/).
 - `templates/full-collective/agents/designer.agent.md` — full agent template with design standards, Figma workflow, and session protocols
 - `design-implement` joining pattern — designer → developer sequential flow for UI design then implementation
 - `schema/rna-schema.json` — designer agent entry with persona, capabilities, and `/design` command
+- **MCP / Tool Discovery** — auto-detect installed MCP servers and inject tools into agent configurations
+- `tools/discover-tools.js` — standalone discovery module with known-server registry (~13 servers), platform config parsers, role-based tool assignment
+- `.rna/tools-manifest.json` — generated manifest documenting all discovered servers, tools, and per-agent assignments
+- `discoveredMcpServers[]` field in `.rna/config.json` — records which MCP servers were found at install time
+- Copilot adapter fallback: auto-discovers MCP servers from `.vscode/mcp.json` when `mcpTools` not set in schema
+- `install.sh` bash-native MCP discovery — parses workspace MCP configs and appends tools to agent frontmatter
 
 ### Changed
 - Full collective expanded from 6 → 7 agents (added `designer`)
 - `full-pipeline` joining pattern expanded to include `designer`: architect → designer → developer → reviewer
+- `tools/init.js` — Phase 3.5 added: MCP/tool discovery between schema mutation and file write
+- `adapters/copilot/copilot-adapter.js` — `run()` now auto-discovers MCP servers as fallback when `mcpTools` not in schema
+- `tools/install.sh` — copilot frontmatter generation now scans workspace MCP config and appends discovered tools per agent role
+- `docs/rna-commands.md` — `/rna.setup` protocol expanded from 7 → 8 steps (added step 6: Discover MCP servers and tools)
 - `schema/rna-schema.json` — `rnaVersion` bumped from `1.1.0` → `1.2.0`
 - `schema/rna-schema-definition.json` — relaxed `meta.platform` from enum to plain string for custom platform support
 - `schema/rna-schema-definition.json` — relaxed `joiningPatterns` required fields (removed `file` from required)

@@ -890,6 +890,52 @@ write_agent_file() {
   - edit/editFiles
   - web/fetch" ;;
       esac
+
+      # ── MCP Tool Discovery (bash-native, best-effort) ──────────────────────
+      # Scan workspace MCP config for the platform and append discovered tools.
+      local mcp_config_file=""
+      case "$FINAL_PLATFORM" in
+        copilot)      mcp_config_file="${OUTPUT_DIR}/.vscode/mcp.json" ;;
+        cursor)       mcp_config_file="${OUTPUT_DIR}/.cursor/mcp.json" ;;
+        claude-code)  mcp_config_file="${OUTPUT_DIR}/.mcp.json" ;;
+      esac
+
+      if [[ -n "$mcp_config_file" && -f "$mcp_config_file" ]]; then
+        # Known server → role mapping (server_key:roles:tools)
+        local -a KNOWN_MCP_MAP=(
+          "microsoft/markitdown:researcher,developer:microsoft/markitdown/convert_to_markdown"
+          "tavily/tavily-mcp:researcher:tavily/tavily-mcp/tavily-search,tavily/tavily-mcp/tavily-extract"
+          "browsermcp:designer,developer:browsermcp/browser_navigate,browsermcp/browser_screenshot,browsermcp/browser_click,browsermcp/browser_snapshot"
+          "penpot/penpot-mcp:designer:penpot/penpot-mcp/execute_code,penpot/penpot-mcp/export_shape,penpot/penpot-mcp/high_level_overview"
+          "dev.svelte/mcp:developer:dev.svelte/mcp/get-documentation,dev.svelte/mcp/list-sections"
+          "microsoft/playwright:developer,reviewer:microsoft/playwright/browser_navigate,microsoft/playwright/browser_snapshot,microsoft/playwright/browser_click"
+          "snyk:reviewer,ops:snyk/snyk_code_scan,snyk/snyk_sca_scan"
+          "gitkraken:developer,reviewer:gitkraken/git_log_or_diff,gitkraken/git_blame,gitkraken/git_status"
+          "makenotion/notion:director,ops,researcher:makenotion/notion/notion-search,makenotion/notion/notion-fetch"
+        )
+        local mcp_extra_tools=""
+        for entry in "${KNOWN_MCP_MAP[@]}"; do
+          local skey="${entry%%:*}"
+          local rest="${entry#*:}"
+          local roles="${rest%%:*}"
+          local tools="${rest#*:}"
+          # Check if server key appears in the config file
+          if grep -q "\"${skey}\"" "$mcp_config_file" 2>/dev/null; then
+            # Check if current agent role is in the server's roles
+            if echo ",$roles," | grep -q ",${agent_id},"; then
+              IFS=',' read -ra tool_arr <<< "$tools"
+              for t in "${tool_arr[@]}"; do
+                mcp_extra_tools="${mcp_extra_tools}
+  - ${t}"
+              done
+            fi
+          fi
+        done
+        if [[ -n "$mcp_extra_tools" ]]; then
+          tools_yaml="${tools_yaml}${mcp_extra_tools}"
+        fi
+      fi
+
       frontmatter="---
 name: \"${_effective_id}\"
 description: \"${role} — ${caps}\"

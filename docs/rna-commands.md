@@ -87,19 +87,28 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
    - Based on Q3, run the matching adapter: `adapters/copilot/`, `adapters/cursor/`, etc.
    - Adapter regenerates platform-specific instruction files from `receptors.json`
 
-6. **Write `.rna/config.json`**
+6. **Discover MCP servers and tools**
+   - Scan platform MCP config files (`.vscode/mcp.json`, `.cursor/mcp.json`, `.mcp.json`)
+   - Match discovered servers against the known registry (`tools/discover-tools.js`)
+   - Assign MCP tools to agents based on role relevance (e.g., Figma → designer, Tavily → researcher)
+   - Write `mcpTools[]` per agent into `rna-schema.json`
+   - Write `.rna/tools-manifest.json` with full discovery results
+   - Add `discoveredMcpServers[]` to `.rna/config.json`
+
+7. **Write `.rna/config.json`**
    ```json
    {
      "projectName": "<name from package.json>",
      "adapter": "<Q3 platform>",
      "adapters": ["<Q3 platform>"],
+     "discoveredMcpServers": ["<server-key>", "..."],
      "studioPort": 7337,
      "rnaVersion": "1.0.0",
      "installedAt": "<ISO 8601 timestamp>"
    }
    ```
 
-7. **Print setup summary**
+8. **Print setup summary**
    ```
    ✓ RNA Method setup complete
    Platform:       <platform>
@@ -109,8 +118,8 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
    Next:           type /rna.gui to start the visual studio
    ```
 
-**Reads:** `package.json`, existing agent/instruction files  
-**Writes:** `_memory/rna-method/receptors.json`, `_memory/rna-method/timeline.json`, `.rna/config.json`, platform adapter output  
+**Reads:** `package.json`, existing agent/instruction files, platform MCP config (`.vscode/mcp.json`, etc.)  
+**Writes:** `_memory/rna-method/receptors.json`, `_memory/rna-method/timeline.json`, `.rna/config.json`, `.rna/tools-manifest.json`, platform adapter output  
 **Prints:** setup summary
 
 ---
