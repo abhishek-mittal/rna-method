@@ -1769,13 +1769,20 @@ main() {
         if [[ "$FINAL_OBSIDIAN_ENABLED" == true ]]; then
           echo ""
           printf "  ${BOLD}─ Generating Obsidian vault ────────────────────────${RESET}\n"
-          local vault_script
-          vault_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/obsidian-vault.js"
-          if [[ -f "$vault_script" ]]; then
-            node "$vault_script" "$OUTPUT_DIR" || \
+          if [[ "$IS_EMBEDDED" == true ]]; then
+            node "${REPO_ROOT}/tools/obsidian-vault.js" "$OUTPUT_DIR" || \
               printf "  $(c_yellow "⚠ Obsidian vault generation failed. Run /rna.obsidian later.")\n"
           else
-            printf "  $(c_gray "Obsidian vault script not found (remote mode). Run /rna.obsidian after setup.")\n"
+            local vault_tmp="${TMP_DIR}/obsidian-vault.js"
+            printf "  $(c_gray "  Downloading obsidian-vault.js …")"
+            if curl -fsSL "${GH_RAW}/tools/obsidian-vault.js" -o "$vault_tmp" 2>/dev/null; then
+              printf " $(c_green "done")\n"
+              node "$vault_tmp" "$OUTPUT_DIR" || \
+                printf "  $(c_yellow "⚠ Obsidian vault generation failed. Run /rna.obsidian later.")\n"
+            else
+              printf " $(c_red "failed")\n"
+              printf "  $(c_yellow "⚠ Could not download vault generator. Run /rna.obsidian after setup.")\n"
+            fi
           fi
         fi
       fi
