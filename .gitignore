@@ -9,6 +9,10 @@ studio/tsconfig.tsbuildinfo
 docs-site/dist/
 docs-site/.astro/
 
+# Generated project-local directories
+.rna/
+_memory/
+
 # Environment
 .env
 .env.local

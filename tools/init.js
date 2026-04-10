@@ -30,6 +30,7 @@
  *   --director-name=<name>              (persona name for the director agent, e.g. Abhishek)
  *   --studio=<true|false>               (enable RNA Studio dashboard)
  *   --studio-port=<port>                (default: 7337)
+ *   --obsidian=<true|false>             (enable Obsidian vault with [[wikilinks]])
  *   --output=<dir>                      (default: cwd)
  *   --non-interactive                   (accept defaults; combine with other flags)
  */
@@ -76,6 +77,7 @@ const DIRECTOR_NAME_FLAG = flag('director-name');
 const OUTPUT_FLAG       = flag('output');
 const STUDIO_FLAG       = flag('studio');
 const STUDIO_PORT_FLAG  = flag('studio-port');
+const OBSIDIAN_FLAG     = flag('obsidian');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -695,6 +697,22 @@ async function main() {
     }
   }
 
+  // Obsidian Vault
+  console.log('');
+  console.log(c('bold', '  ── ⑤ Obsidian Vault ──────────────────────────────────'));
+  console.log(c('gray', '  Obsidian Vault creates a knowledge graph for your agent collective in _memory/.'));
+  console.log(c('gray', '  Agents use [[wikilinks]] for inter-linkage, increasing cognitive navigation.'));
+
+  let enableObsidian = OBSIDIAN_FLAG === 'true' || OBSIDIAN_FLAG === 'yes';
+  if (!NON_INTERACTIVE) {
+    const obsidianChoice = await arrowSelect(
+      'Enable Obsidian Vault? (agent knowledge graph with [[wikilinks]])',
+      ['yes — generate Obsidian vault in _memory/', 'no  — skip for now (can add later with /rna.obsidian)'],
+      0
+    );
+    enableObsidian = obsidianChoice.startsWith('yes');
+  }
+
   // ── Summary ───────────────────────────────────────────────────────────────
 
   console.log('');
@@ -709,6 +727,7 @@ async function main() {
   }
   console.log(`  Stack    : ${c('cyan', techStack)} / ${c('cyan', framework)}`);
   console.log(`  Studio   : ${c('cyan', enableStudio ? `yes (port ${studioPort})` : 'no')}`);
+  console.log(`  Obsidian : ${c('cyan', enableObsidian ? 'yes' : 'no')}`);
   console.log(`  Output   : ${c('cyan', outputDir)}`);
   console.log('');
 
@@ -954,6 +973,7 @@ async function main() {
     adapters: [platform, ...extraAdapters],
     studio: enableStudio,
     studioPort: studioPort,
+    obsidian: enableObsidian,
     rnaVersion: (schema.meta && schema.meta.version) ? schema.meta.version : '1.0.0',
     installedAt: new Date().toISOString(),
     discoveredMcpServers: toolDiscovery ? Object.keys(toolDiscovery.servers) : [],
@@ -961,6 +981,34 @@ async function main() {
   };
   writef(rnaConfigPath, JSON.stringify(rnaConfig, null, 2) + '\n');
   console.log('  ✓ .rna/config.json');
+
+  // ── Phase 4.52: Obsidian Vault ──────────────────────────────────────────
+
+  if (enableObsidian) {
+    console.log('');
+    console.log(c('bold', '  ─ Generating Obsidian vault ──────────────────────'));
+
+    try {
+      // obsidian-vault.js lives alongside init.js in tools/
+      const vaultScript = path.join(SCRIPT_DIR, 'obsidian-vault.js');
+      if (fs.existsSync(vaultScript)) {
+        const { execSync } = require('child_process');
+        execSync(`node "${vaultScript}" "${outputDir}"`, { stdio: 'inherit' });
+      } else {
+        // Remote mode — download and run
+        const vaultUrl = `${BASE_RAW_URL}/tools/obsidian-vault.js`;
+        const tmpPath  = path.join(os.tmpdir(), 'obsidian-vault.js');
+        const vaultSrc = await fetchText(vaultUrl);
+        fs.writeFileSync(tmpPath, vaultSrc, 'utf-8');
+        const { execSync } = require('child_process');
+        execSync(`node "${tmpPath}" "${outputDir}"`, { stdio: 'inherit' });
+        try { fs.unlinkSync(tmpPath); } catch (_) {}
+      }
+    } catch (e) {
+      console.log(c('yellow', `  ⚠ Obsidian vault generation failed: ${e.message}`));
+      console.log(c('gray', '    You can generate it later with: /rna.obsidian'));
+    }
+  }
 
   // ── Phase 4.55: Write _base-agent.md + toon-registry.md ─────────────────
 
@@ -1183,6 +1231,10 @@ async function main() {
   if (enableStudio) {
     console.log(`    7. Start RNA Studio:`);
     console.log(c('gray', `       node <rna-method>/studio/server.js  →  http://localhost:${studioPort}`));
+  }
+  if (enableObsidian) {
+    const obsStep = enableStudio ? 8 : 7;
+    console.log(`    ${obsStep}. Open ${c('cyan', '_memory/')} as a vault in Obsidian to explore the agent graph`);
   }
   console.log('');
 }

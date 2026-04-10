@@ -10,12 +10,12 @@
 On every invocation, before doing anything else:
 
 1. **HANDOFF check**: If invoked with `[HANDOFF from @<agent>]`:
-   - Read `_memory/rna-method/agent-context.json` → find matching `joinId`
+   - Read [[agent-context|_memory/rna-method/agent-context.json]] → find matching `joinId`
    - Load every file in `artifacts[]` — this is your full context
    - Proceed directly with the assigned task
 
 2. **RESUME check**: If invoked with `[RESUME: <task-slug>]`:
-   - Read `_memory/rna-method/agent-context.json` → find checkpoint matching `<task-slug>`
+   - Read [[agent-context|_memory/rna-method/agent-context.json]] → find checkpoint matching `<task-slug>`
    - Read the checkpoint file at `path`
    - Reconstruct from `decisions[]`, `filesChanged[]`, `remainingWork[]`
    - Continue from first `remainingWork[]` item
@@ -38,7 +38,7 @@ When handing off to the next agent in a join:
 
 Before handing off:
 1. Complete your memory write (§memory-write below)
-2. Update `agent-context.json` — add step to `completedSteps[]`, artifacts to `artifacts[]`
+2. Update [[agent-context|agent-context.json]] — add step to `completedSteps[]`, artifacts to `artifacts[]`
 3. Output the handoff block above
 4. Tell user: copy last line → fresh chat thread
 
@@ -55,7 +55,7 @@ If you are the terminal agent in a join:
   open: [follow-ups]
 ```
 
-Then: remove join from `agent-context.json` `activeJoins[]`, delete checkpoint file if any.
+Then: remove join from [[agent-context|agent-context.json]] `activeJoins[]`, delete checkpoint file if any.
 
 ---
 
@@ -72,7 +72,7 @@ Checkpoint when: >20 turns, >5 files read, or losing thread.
 ```
 
 Write to `_memory/rna-method/checkpoints/<YYYY-MM-DD>_<task-slug>.json`.
-Add pointer to `agent-context.json` `checkpoints[]`.
+Add pointer to [[agent-context|agent-context.json]] `checkpoints[]`.
 
 ---
 
@@ -93,15 +93,15 @@ Contents: what was done, decisions made, files changed, follow-ups.
 Keeping `_memory/rna-method/` current is **mandatory** — single source of truth for the team.
 
 ### Before every task
-1. Read `_memory/rna-method/timeline.json` → note `activePhase`, `recentDecisions`, open questions.
-2. Read `_memory/rna-method/agent-context.json` → note active joins, open checkpoints, blockers.
+1. Read [[timeline|_memory/rna-method/timeline.json]] → note `activePhase`, `recentDecisions`, open questions.
+2. Read [[agent-context|_memory/rna-method/agent-context.json]] → note active joins, open checkpoints, blockers.
 
 ### After every task
 1. Write session log (§memory-write above).
-2. Append to `timeline.json` `recentDecisions[]`:
+2. Append to [[timeline|timeline.json]] `recentDecisions[]`:
    `{ "date": "YYYY-MM-DD", "agent": "<id>", "decision": "<what>", "rationale": "<why>" }`
-3. If `projectState` changed: update `timeline.json` `projectState`.
-4. Clear resolved items: remove completed checkpoints from `agent-context.json`.
+3. If `projectState` changed: update [[timeline|timeline.json]] `projectState`.
+4. Clear resolved items: remove completed checkpoints from [[agent-context|agent-context.json]].
 5. Output the §task-complete block.
 
 ---
@@ -147,7 +147,7 @@ RNA agents participate in a lifecycle that captures and compresses knowledge aut
 1. Load compact observation index from `_memory/observations/index.tsv` (Layer 1 — titles only, ~100 tokens/entry).
 2. Load recent session summaries from `_memory/context/` (last 3 sessions max).
 3. If a relevant prior observation exists, use `/rna.recall <topic>` to load Layer 2 (timeline) or Layer 3 (full details) on demand.
-4. Check `_memory/rna-method/agent-context.json` for pending signals assigned to this agent.
+4. Check [[agent-context|_memory/rna-method/agent-context.json]] for pending signals assigned to this agent.
 
 ### onToolComplete (async, non-blocking)
 After significant tool executions (file reads, terminal commands, API calls), capture a one-line observation:

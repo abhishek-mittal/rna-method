@@ -1,7 +1,7 @@
 # Joining Pattern: Research to Content
 
 **Pattern ID:** `research-build`
-**Agents:** `researcher` → `developer`
+**Agents:** [[researcher/profile|researcher]] → [[developer/profile|developer]]
 **Flow type:** Pipeline (sequential handoff)
 
 ---
@@ -14,7 +14,7 @@ Use this join when a task requires research findings to inform or drive implemen
 
 **Pipeline:**
 ```
-@researcher <research question> → [Brief produced] → @developer <implement based on brief>
+[[researcher/profile|@researcher]] <research question> → [Brief produced] → [[developer/profile|@developer]] <implement based on brief>
 ```
 
 ---

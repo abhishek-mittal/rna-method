@@ -95,6 +95,7 @@ DIRECTOR_NAME_FLAG=""
 OUTPUT_FLAG=""
 STUDIO_FLAG=""
 STUDIO_PORT_FLAG=""
+OBSIDIAN_FLAG=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -112,6 +113,7 @@ for arg in "$@"; do
     --output=*)           OUTPUT_FLAG="${arg#--output=}" ;;
     --studio=*)           STUDIO_FLAG="${arg#--studio=}" ;;
     --studio-port=*)      STUDIO_PORT_FLAG="${arg#--studio-port=}" ;;
+    --obsidian=*)         OBSIDIAN_FLAG="${arg#--obsidian=}" ;;
     --help|-h)
       sed -n '2,30p' "${BASH_SOURCE[0]:-$0}" | grep '^#' | sed 's/^# \{0,1\}//'
       exit 0
@@ -1545,6 +1547,23 @@ main() {
     FINAL_STUDIO_PORT="$ASK_RESULT"
   fi
 
+  # ── Section 5: Obsidian Vault ───────────────────────────────────────────────
+
+  echo ""
+  printf "  ${BOLD}── ⑤ Obsidian Vault ────────────────────────────────${RESET}\n"
+  printf "  $(c_gray "Obsidian Vault creates a knowledge graph for your agent collective in _memory/.")\n"
+  printf "  $(c_gray "Agents use [[wikilinks]] for inter-linkage, increasing cognitive navigation.")\n"
+
+  FINAL_OBSIDIAN_ENABLED=false
+  if [[ -n "$OBSIDIAN_FLAG" ]]; then
+    [[ "$OBSIDIAN_FLAG" == "true" || "$OBSIDIAN_FLAG" == "yes" ]] && FINAL_OBSIDIAN_ENABLED=true
+  elif [[ "$NON_INTERACTIVE" != true ]]; then
+    arrow_select "Enable Obsidian Vault? (agent knowledge graph with [[wikilinks]])" 0 "" \
+      "yes — generate Obsidian vault in _memory/" \
+      "no  — skip for now (can add later with /rna.obsidian)"
+    [[ "$ARROW_SELECT_RESULT" == yes* ]] && FINAL_OBSIDIAN_ENABLED=true
+  fi
+
   # ── Summary ──────────────────────────────────────────────────────────────────
 
   local agents_csv
@@ -1567,6 +1586,11 @@ main() {
     printf "  Studio   : $(c_cyan "yes (port $FINAL_STUDIO_PORT)")\n"
   else
     printf "  Studio   : $(c_cyan "no")\n"
+  fi
+  if [[ "$FINAL_OBSIDIAN_ENABLED" == true ]]; then
+    printf "  Obsidian : $(c_cyan "yes")\n"
+  else
+    printf "  Obsidian : $(c_cyan "no")\n"
   fi
   printf "  Output   : $(c_cyan "$OUTPUT_DIR")\n"
   echo ""
@@ -1740,6 +1764,20 @@ main() {
         echo ""
         printf "  ${BOLD}─ Platform adapter + validation ────────────────────${RESET}\n"
         delegate_to_node
+
+        # ── Obsidian Vault generation ────────────────────────────────────────
+        if [[ "$FINAL_OBSIDIAN_ENABLED" == true ]]; then
+          echo ""
+          printf "  ${BOLD}─ Generating Obsidian vault ────────────────────────${RESET}\n"
+          local vault_script
+          vault_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/obsidian-vault.js"
+          if [[ -f "$vault_script" ]]; then
+            node "$vault_script" "$OUTPUT_DIR" || \
+              printf "  $(c_yellow "⚠ Obsidian vault generation failed. Run /rna.obsidian later.")\n"
+          else
+            printf "  $(c_gray "Obsidian vault script not found (remote mode). Run /rna.obsidian after setup.")\n"
+          fi
+        fi
       fi
     fi
   fi
@@ -1769,6 +1807,11 @@ main() {
     printf "    4. Invoke your first agent:\n"
   fi
   printf "       $(c_gray "@developer Implement a user authentication endpoint")\n"
+  if [[ "$FINAL_OBSIDIAN_ENABLED" == true ]]; then
+    local obs_step=5
+    [[ "$FINAL_STUDIO_ENABLED" == true ]] && obs_step=6
+    printf "    $obs_step. Open $(c_cyan "_memory/") as a vault in Obsidian to explore the agent graph\n"
+  fi
   echo ""
 }
 

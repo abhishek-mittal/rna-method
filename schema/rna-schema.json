@@ -40,6 +40,11 @@
       "update-timeline"
     ]
   },
+  "obsidian": {
+    "enabled": false,
+    "vaultRoot": "_memory/",
+    "wikilinks": true
+  },
   "registry": "registry/capabilities.csv",
   "agents": [
     {

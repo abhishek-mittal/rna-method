@@ -80,6 +80,7 @@ function cmdHelp() {
     ['/rna.compress',       'Compress raw observations into structured memory entries'],
     ['/rna.search <query>', 'Search knowledge bases and memory files by keyword'],
     ['/rna.upgrade',        'Upgrade agents to latest RNA release, preserving project customizations'],
+    ['/rna.obsidian',       'Generate or regenerate the Obsidian vault in _memory/ with [[wikilinks]]'],
     ['/rna.help',           'Print this table'],
   ];
 
@@ -521,6 +522,35 @@ function cmdSearch(args) {
   console.log('');
 }
 
+// ─── Command: /rna.obsidian ─────────────────────────────────────────────────
+
+function cmdObsidian() {
+  console.log('\n' + c('bold', '  RNA Method — Obsidian Vault Generator') + '\n');
+
+  // Find obsidian-vault.js alongside rna-commands.js
+  const vaultScript = path.join(__dirname, 'obsidian-vault.js');
+  if (!fs.existsSync(vaultScript)) {
+    console.log(c('red', '  ✗ obsidian-vault.js not found.'));
+    console.log(c('gray', '    Ensure tools/obsidian-vault.js exists in the rna-method directory.'));
+    return;
+  }
+
+  try {
+    execSync(`node "${vaultScript}" "${ROOT}"`, { stdio: 'inherit' });
+
+    // Update .rna/config.json
+    const configPath = path.join(ROOT, '.rna', 'config.json');
+    const config = readJSON(configPath);
+    if (config) {
+      config.obsidian = true;
+      writeJSON(configPath, config);
+      console.log('  ' + c('green', '✓') + ' .rna/config.json updated (obsidian: true)');
+    }
+  } catch (e) {
+    console.log(c('red', `  ✗ Vault generation failed: ${e.message}`));
+  }
+}
+
 // ─── Command: /rna.upgrade ───────────────────────────────────────────────────
 
 function cmdUpgrade() {
@@ -658,6 +688,7 @@ function main() {
     case 'compress': cmdCompress();                break;
     case 'search':   cmdSearch(trailingArgs);      break;
     case 'upgrade':  cmdUpgrade();                 break;
+    case 'obsidian':  cmdObsidian();                break;
     case 'resynk':   cmdUpgrade();                 break;  // alias
     case 'setup':    cmdDelegateToInit('setup');   break;
     case 'update':   cmdDelegateToInit('update');  break;

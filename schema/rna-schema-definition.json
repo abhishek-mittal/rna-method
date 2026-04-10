@@ -36,6 +36,16 @@
         "onSessionEnd":   { "type": "array", "items": { "type": "string" } }
       }
     },
+    "obsidian": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Obsidian vault configuration for agent knowledge graph with [[wikilinks]].",
+      "properties": {
+        "enabled":    { "type": "boolean", "default": false },
+        "vaultRoot":  { "type": "string", "description": "Path to vault root relative to project, default: _memory/" },
+        "wikilinks":  { "type": "boolean", "default": true, "description": "Use [[wikilinks]] in agent templates for inter-linkage" }
+      }
+    },
     "registry": { "type": "string" },
     "meta": {
       "type": "object",

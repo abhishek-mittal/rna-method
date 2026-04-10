@@ -1,7 +1,7 @@
 # Joining Pattern: Full Pipeline
 
 **Pattern ID:** `full-pipeline`
-**Agents:** `architect` → `developer` → `reviewer`
+**Agents:** [[architect/profile|architect]] → [[developer/profile|developer]] → [[reviewer/profile|reviewer]]
 **Flow type:** Pipeline (3-stage)
 
 ---
@@ -14,7 +14,7 @@ Use this join for complex features that require design before implementation and
 
 **Pipeline:**
 ```
-@architect <design task> → [ADR produced] → @developer <implement> → [PR opened] → @reviewer <review>
+[[architect/profile|@architect]] <design task> → [ADR produced] → [[developer/profile|@developer]] <implement> → [PR opened] → [[reviewer/profile|@reviewer]] <review>
 ```
 
 ---

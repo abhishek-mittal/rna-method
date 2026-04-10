@@ -1,7 +1,7 @@
 # Joining Pattern: Design to Build
 
 **Pattern ID:** `build-review`
-**Agents:** `developer` → `reviewer`
+**Agents:** [[developer/profile|developer]] → [[reviewer/profile|reviewer]]
 **Flow type:** Sequential (review gate)
 
 ---
@@ -14,7 +14,7 @@ Use this join for any non-trivial implementation that requires a code review bef
 
 **Pipeline:**
 ```
-@developer <implement task> → [PR opened] → @reviewer <review PR>
+[[developer/profile|@developer]] <implement task> → [PR opened] → [[reviewer/profile|@reviewer]] <review PR>
 ```
 
 This is the most common join in a standard development cycle.
