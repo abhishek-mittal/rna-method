@@ -47,6 +47,7 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
 | `/rna.compact` | Compact current session context to `_memory/context/<date>_session-summary.md` |
 | `/rna.gui` | Print instructions to start RNA Studio and the studio URL |
 | `/rna.version` | Print installed RNA Method version and schema version |
+| `/rna.tools` | Re-discover MCP servers and inject tools into agent files |
 | `/rna.help` | Print this table |
 
 ---
@@ -209,7 +210,7 @@ Agents that **do not** inherit `_base-agent` (e.g., external agents, fresh insta
 
 **Purpose:** Compress current session context into a durable summary before closing the chat window.
 
-See [context-compaction.md](context-compaction.md) for the full specification of this command, including session summary format and best practices.
+See [Context Compaction](/concepts/context-compaction) for the full specification of this command, including session summary format and best practices.
 
 **Steps:**
 
@@ -292,6 +293,41 @@ See [context-compaction.md](context-compaction.md) for the full specification of
 
 ---
 
+### `/rna.tools`
+
+**Purpose:** Re-discover MCP servers and inject their tools into existing agent files. Run this after adding new MCP servers to your editor config.
+
+**Steps:**
+
+1. Read `.rna/config.json` → extract `platform` and `agents[]`
+2. Scan the project's MCP config file for the platform (e.g., `.vscode/mcp.json` for Copilot)
+3. Match discovered server keys against the known MCP server registry
+4. Compute per-agent tool assignments based on each server's role relevance
+5. For each agent with new tools: read agent file → merge new MCP tools into the `tools:` frontmatter block → write
+6. Update `.rna/tools-manifest.json` with the full discovery results
+7. Print:
+   ```
+   Found <n> MCP server(s):
+     ✓ known  Figma
+     ✓ known  Tavily
+     ? unknown  my-custom-server
+   
+   ✓ developer: +3 MCP tool(s) injected
+   ✓ designer: +5 MCP tool(s) injected
+   ✓ reviewer: already up to date
+   
+   Updated 2 agent file(s).
+   ✓ .rna/tools-manifest.json written
+   ```
+
+**When to run:** After adding MCP servers to `.vscode/mcp.json`, `.cursor/mcp.json`, or `.mcp.json`. Also after `--update` installs if new servers were added.
+
+**Reads:** `.rna/config.json`, platform MCP config file, agent files  
+**Writes:** agent files (tools frontmatter), `.rna/tools-manifest.json`  
+**Prints:** discovery results and injection summary
+
+---
+
 ### `/rna.help`
 
 **Purpose:** Quick reference without leaving the chat.
@@ -311,6 +347,7 @@ Print the following table exactly:
 /rna.compact           Compress session to _memory/context/ summary file
 /rna.gui               Print instructions to start RNA Studio
 /rna.version           Print installed RNA Method and schema versions
+/rna.tools             Re-discover MCP servers, inject tools into agent files
 /rna.help              Print this table
 ─────────────────────────────────────────────────────────────────────────────
 Type any command above in your agent chat to execute.
@@ -319,6 +356,28 @@ Type any command above in your agent chat to execute.
 **Reads:** nothing  
 **Writes:** nothing  
 **Prints:** help table
+
+---
+
+## Director Plan Mode
+
+The Director agent supports the `/plan` command — a structured planning protocol that produces agent-routed execution plans before any work begins.
+
+```
+/plan <goal or requirement — natural language>
+```
+
+When the Director sees `/plan`, it:
+
+1. **Decomposes** the goal into discrete work items
+2. **Routes** each item to the correct agent (developer, designer, reviewer, etc.)
+3. **Sequences** items by dependency
+4. **Estimates** each as S/M/L
+5. **Outputs** a `§plan` block and stores it in `_memory/agents/director/`
+
+Plan Mode never activates agents or starts work — it only produces plans. After review, the Director converts the plan to execution by activating joins and issuing handoffs.
+
+See [Director Plan Mode](/concepts/director-plan-mode) for the full specification.
 
 ---
 
@@ -466,6 +525,18 @@ Complete in one response.
 
 ---
 
+### /rna.tools
+
+1. Read `.rna/config.json` → get `platform` and `agents[]`
+2. Scan project's MCP config file for the platform
+3. Match discovered servers against known MCP registry
+4. Compute per-agent tool assignments based on role relevance
+5. For each agent with new tools: merge into `tools:` frontmatter
+6. Write `.rna/tools-manifest.json`
+7. Print discovery results and injection summary
+
+---
+
 ### /rna.help
 
 Print:
@@ -479,10 +550,11 @@ Print:
 /rna.compact           Compress session to _memory/context/ summary file
 /rna.gui               Print instructions to start RNA Studio
 /rna.version           Print installed RNA Method and schema versions
+/rna.tools             Re-discover MCP servers, inject tools into agent files
 /rna.help              Print this table
 ─────────────────────────────────────────────────────────────────────────────
 ```
 
 ---
 
-*For the full `/rna.compact` specification — session summary format, context window strategy, and best practices — see [context-compaction.md](context-compaction.md).*
+*For the full `/rna.compact` specification — session summary format, context window strategy, and best practices — see [Context Compaction](/concepts/context-compaction).*

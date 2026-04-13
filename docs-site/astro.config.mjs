@@ -27,12 +27,14 @@ export default defineConfig({
           items: [
             { label: 'Cross-Platform Guide', link: '/guides/cross-platform' },
             { label: 'Failure Modes', link: '/guides/failure-modes' },
+            { label: 'Obsidian Vault Integration', link: '/guides/obsidian-vault' },
           ],
         },
         {
           label: 'Concepts',
           items: [
             { label: 'Base Agent Signal Hub', link: '/concepts/base-agent-signal-hub' },
+            { label: 'Director Plan Mode', link: '/concepts/director-plan-mode' },
             { label: 'Context Compaction', link: '/concepts/context-compaction' },
           ],
         },

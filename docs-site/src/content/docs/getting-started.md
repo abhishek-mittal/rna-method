@@ -208,10 +208,10 @@ See [templates/joins/](../templates/joins/) for the full handoff protocol.
 
 ## Next Steps
 
-- [Schema Reference](schema-reference.md) — understand every field in `rna-schema.json`
-- [Cross-Platform Guide](cross-platform-guide.md) — platform-specific behaviors and tips
-- [Failure Modes](failure-modes.md) — if something isn't working right
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — add a new adapter or rule
+- [Schema Reference](/reference/schema-reference) — understand every field in `rna-schema.json`
+- [Cross-Platform Guide](/guides/cross-platform) — platform-specific behaviors and tips
+- [Failure Modes](/guides/failure-modes) — if something isn't working right
+- [Director Plan Mode](/concepts/director-plan-mode) — structured planning before execution
 
 ---
 
@@ -227,4 +227,4 @@ Yes — each `rna-schema.json` is per-project and per-platform. You can have a C
 Through `_memory/rna-method/timeline.json` (signal queue + project state) and `_memory/agents/<agent-id>/` session log files. Agents write to these at the end of each session.
 
 **Q: What if my AI editor doesn't support `@agent-name` syntax?**
-Use the agent file directly (e.g., paste the agent file path in your context, or start the conversation with the agent's Session Start Protocol). See [Failure Modes](failure-modes.md) for more.
+Use the agent file directly (e.g., paste the agent file path in your context, or start the conversation with the agent's Session Start Protocol). See [Failure Modes](/guides/failure-modes) for more.

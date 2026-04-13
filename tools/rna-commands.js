@@ -80,6 +80,7 @@ function cmdHelp() {
     ['/rna.compress',       'Compress raw observations into structured memory entries'],
     ['/rna.search <query>', 'Search knowledge bases and memory files by keyword'],
     ['/rna.upgrade',        'Upgrade agents to latest RNA release, preserving project customizations'],
+    ['/rna.tools',          'Re-discover MCP servers and inject tools into agent files'],
     ['/rna.obsidian',       'Generate or regenerate the Obsidian vault in _memory/ with [[wikilinks]]'],
     ['/rna.help',           'Print this table'],
   ];
@@ -653,6 +654,158 @@ function cmdDelegateToInit(name) {
   console.log(`  Run: ${c('cyan', 'node tools/init.js')}\n`);
 }
 
+// ─── Command: /rna.tools ─────────────────────────────────────────────────────
+
+function cmdTools() {
+  console.log('\n' + c('bold', '  RNA Method — Tool & MCP Discovery') + '\n');
+
+  const configPath = path.join(ROOT, '.rna', 'config.json');
+  const config     = readJSON(configPath);
+
+  if (!config) {
+    console.log(c('red', '  .rna/config.json not found — run /rna.setup first.\n'));
+    return;
+  }
+
+  const platform = config.platform || 'copilot';
+  const agents   = (config.agents ?? []).map(a => typeof a === 'string' ? a : a.id);
+
+  if (agents.length === 0) {
+    console.log(c('yellow', '  No agents found in .rna/config.json — nothing to update.\n'));
+    return;
+  }
+
+  // Load discover-tools module
+  let discoverMod;
+  try {
+    discoverMod = require(path.join(__dirname, 'discover-tools'));
+  } catch (e) {
+    console.log(c('red', `  Could not load discover-tools.js: ${e.message}\n`));
+    return;
+  }
+
+  // Run discovery
+  const result = discoverMod.discover(platform, ROOT);
+
+  if (result.serverCount === 0) {
+    console.log(c('gray', '  No MCP servers detected in project config.'));
+    console.log(c('gray', '  Add MCP servers to your editor config, then re-run /rna.tools.\n'));
+    return;
+  }
+
+  console.log(`  Found ${c('green', String(result.serverCount))} MCP server(s):\n`);
+  for (const [key, srv] of Object.entries(result.servers)) {
+    const tag = srv.known ? c('green', '✓ known') : c('yellow', '? unknown');
+    console.log(`    ${tag}  ${srv.name || key}`);
+  }
+  console.log('');
+
+  // Compute per-agent MCP tool assignments
+  const agentMcpTools = discoverMod.computeAgentMcpTools(result, agents);
+
+  if (Object.keys(agentMcpTools).length === 0) {
+    console.log(c('gray', '  No MCP tools matched any agent roles.\n'));
+    return;
+  }
+
+  // Determine agent file directory based on platform
+  let agentDir;
+  switch (platform) {
+    case 'copilot':    agentDir = path.join(ROOT, '.github', 'agents'); break;
+    case 'cursor':     agentDir = path.join(ROOT, '.cursor', 'agents'); break;
+    case 'claude-code': agentDir = path.join(ROOT, '.claude', 'agents'); break;
+    default:           agentDir = path.join(ROOT, '.github', 'agents'); break;
+  }
+
+  let updated = 0;
+
+  for (const [agentId, newTools] of Object.entries(agentMcpTools)) {
+    // Find the agent file
+    const possibleFiles = [
+      path.join(agentDir, `${agentId}.agent.md`),
+      path.join(agentDir, `${agentId}.md`),
+    ];
+    // Also check director name from config
+    if (agentId === 'director' && config.directorName) {
+      const dirName = config.directorName.toLowerCase();
+      possibleFiles.unshift(
+        path.join(agentDir, `${dirName}.agent.md`),
+        path.join(agentDir, `${dirName}.md`),
+      );
+    }
+
+    const agentFile = possibleFiles.find(f => fs.existsSync(f));
+    if (!agentFile) {
+      console.log(`  ${c('yellow', '⚠')} ${agentId}: agent file not found — skipping`);
+      continue;
+    }
+
+    let content = fs.readFileSync(agentFile, 'utf-8');
+
+    // Check if file has YAML frontmatter with tools:
+    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fmMatch) {
+      console.log(`  ${c('yellow', '⚠')} ${agentId}: no frontmatter found — skipping`);
+      continue;
+    }
+
+    const frontmatter = fmMatch[1];
+
+    // Extract existing tools
+    const toolsMatch = frontmatter.match(/tools:\n((?:\s+-\s+.+\n?)*)/);
+    let existingTools = [];
+    if (toolsMatch) {
+      existingTools = toolsMatch[1]
+        .split('\n')
+        .map(l => l.replace(/^\s+-\s+/, '').trim())
+        .filter(Boolean);
+    }
+
+    // Merge: add new MCP tools that aren't already present
+    const allTools = [...existingTools];
+    let addedCount = 0;
+    for (const tool of newTools) {
+      if (!allTools.includes(tool)) {
+        allTools.push(tool);
+        addedCount++;
+      }
+    }
+
+    if (addedCount === 0) {
+      console.log(`  ${c('green', '✓')} ${agentId}: already up to date`);
+      continue;
+    }
+
+    // Rebuild the tools YAML block
+    const newToolsYaml = 'tools:\n' + allTools.map(t => `  - ${t}`).join('\n');
+
+    let newFrontmatter;
+    if (toolsMatch) {
+      newFrontmatter = frontmatter.replace(/tools:\n(?:\s+-\s+.+\n?)*/, newToolsYaml + '\n');
+    } else {
+      // Append tools block to frontmatter
+      newFrontmatter = frontmatter.trimEnd() + '\n' + newToolsYaml + '\n';
+    }
+
+    content = content.replace(fmMatch[1], newFrontmatter);
+    fs.writeFileSync(agentFile, content, 'utf-8');
+    updated++;
+    console.log(`  ${c('green', '✓')} ${agentId}: +${addedCount} MCP tool(s) injected`);
+  }
+
+  console.log('');
+  if (updated > 0) {
+    console.log(`  Updated ${c('green', String(updated))} agent file(s).`);
+  }
+
+  // Write/update tools manifest
+  const manifest     = discoverMod.buildManifest(result, agentMcpTools);
+  const manifestPath = path.join(ROOT, '.rna', 'tools-manifest.json');
+  writeJSON(manifestPath, manifest);
+  console.log(`  ${c('green', '✓')} .rna/tools-manifest.json written`);
+  console.log('');
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 function main() {
@@ -688,6 +841,7 @@ function main() {
     case 'compress': cmdCompress();                break;
     case 'search':   cmdSearch(trailingArgs);      break;
     case 'upgrade':  cmdUpgrade();                 break;
+    case 'tools':    cmdTools();                   break;
     case 'obsidian':  cmdObsidian();                break;
     case 'resynk':   cmdUpgrade();                 break;  // alias
     case 'setup':    cmdDelegateToInit('setup');   break;

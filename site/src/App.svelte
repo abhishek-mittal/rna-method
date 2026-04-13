@@ -2,6 +2,7 @@
   import Nav from './lib/Nav.svelte'
   import Hero from './lib/Hero.svelte'
   import Problem from './lib/Problem.svelte'
+  import Comparison from './lib/Comparison.svelte'
   import HowItWorks from './lib/HowItWorks.svelte'
   import AgentCollective from './lib/AgentCollective.svelte'
   import JoinPatterns from './lib/JoinPatterns.svelte'
@@ -16,6 +17,7 @@
 <main>
   <Hero />
   <Problem />
+  <Comparison />
   <HowItWorks />
   <AgentCollective />
   <JoinPatterns />

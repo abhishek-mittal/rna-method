@@ -17,10 +17,10 @@
     <div class="footer-links">
       <div class="link-group">
         <div class="link-group-title">Docs</div>
-        <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/getting-started.md" target="_blank" rel="noopener">Getting Started</a>
-        <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/schema-reference.md" target="_blank" rel="noopener">Schema Reference</a>
-        <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/cross-platform-guide.md" target="_blank" rel="noopener">Platform Guide</a>
-        <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/failure-modes.md" target="_blank" rel="noopener">Failure Modes</a>
+        <a href="https://rna.webnco.xyz/docs/getting-started">Getting Started</a>
+        <a href="https://rna.webnco.xyz/docs/reference/schema-reference">Schema Reference</a>
+        <a href="https://rna.webnco.xyz/docs/guides/cross-platform">Platform Guide</a>
+        <a href="https://rna.webnco.xyz/docs/guides/failure-modes">Failure Modes</a>
       </div>
       <div class="link-group">
         <div class="link-group-title">Project</div>
@@ -34,7 +34,7 @@
         <a href="https://github.com/abhishek-mittal/rna-method/tree/main/templates/minimal-collective" target="_blank" rel="noopener">Minimal Collective</a>
         <a href="https://github.com/abhishek-mittal/rna-method/tree/main/templates/full-collective" target="_blank" rel="noopener">Full Collective</a>
         <a href="https://github.com/abhishek-mittal/rna-method/tree/main/adapters" target="_blank" rel="noopener">Adapters</a>
-        <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/research-paper.md" target="_blank" rel="noopener">Research Paper</a>
+        <a href="https://rna.webnco.xyz/docs/research/research-paper">Research Paper</a>
       </div>
     </div>
   </div>

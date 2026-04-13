@@ -1264,6 +1264,52 @@ When activating a join, output:
 
 ---
 
+## Director Plan Mode
+
+Plan Mode is triggered by the \`/plan\` command. It produces a structured execution plan **before any work begins**, ensuring every task is routed to the correct agent with clear inputs and outputs.
+
+### Usage
+\`\`\`
+/plan <goal or requirement — natural language>
+\`\`\`
+
+### Plan Mode Protocol
+
+1. **Decompose** — Break the goal into discrete, ordered work items.
+2. **Route** — Assign each work item to the correct agent based on domain expertise.
+3. **Sequence** — Determine dependencies (which items block others) and parallelism opportunities.
+4. **Estimate** — Flag items as S (< 1 session), M (1-2 sessions), or L (3+ sessions).
+5. **Output** — Produce the plan in the structured format below.
+
+### Plan Output Format
+
+\`\`\`
+§plan(<plan-title>)
+  goal:     <1-2 sentence goal statement>
+  status:   📋 Planned | 🚀 In Progress | ✅ Complete
+  items:
+    1. [@<agent>] <task title> — <brief description>
+       size: S | M | L
+       depends: — | <item numbers>
+       inputs:  <what this agent needs>
+       outputs: <what this agent delivers>
+    2. [@<agent>] ...
+  joins:    [<join pattern IDs to activate, if any>]
+  risks:    [<blockers, unknowns, or escalation triggers>]
+  approval: [<items requiring director sign-off before execution>]
+\`\`\`
+
+### Plan Mode Rules
+
+- **Plan first, execute never.** Plan Mode only produces plans — it does not activate agents or start work.
+- **Every item must have an agent.** If no agent fits, flag it as a gap.
+- **Dependencies must be explicit.** No implicit ordering; if item 3 needs item 1's output, say so.
+- **Re-plan on scope change.** If new information changes the goal, produce a revised plan — append \`(rev 2)\` etc.
+- **Store the plan.** Write the plan to \`_memory/agents/director/YYYY-MM-DD_plan_<slug>.md\` for reference.
+- After approval, convert to execution by activating joins or issuing §handoff blocks for each step.
+
+---
+
 ## Session Start Protocol
 
 ${session_start}
@@ -1804,7 +1850,8 @@ main() {
   printf "  ${BOLD}Next steps:${RESET}\n"
   printf "    1. Read $(c_cyan "_memory/rna-method/session-zero.md") — it explains the setup\n"
   printf "    2. Run $(c_cyan "/rna.setup") in your editor chat to personalise the collective\n"
-  printf "    3. Open $(c_cyan "${PLATFORM_ENTRY[$FINAL_PLATFORM]:-platform-entry}") in your editor\n"
+  printf "    3. Run $(c_cyan "/rna.tools") after adding MCP servers to auto-inject tools into agents\n"
+  printf "    4. Open $(c_cyan "${PLATFORM_ENTRY[$FINAL_PLATFORM]:-platform-entry}") in your editor\n"
   if [[ "$FINAL_STUDIO_ENABLED" == true ]]; then
     printf "    4. Start RNA Studio:\n"
     printf "       $(c_cyan "node <path-to-rna-method>/studio/server.js")  →  http://localhost:$FINAL_STUDIO_PORT\n"

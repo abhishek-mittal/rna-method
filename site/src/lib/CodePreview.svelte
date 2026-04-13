@@ -128,7 +128,7 @@
             </svg>
             View on GitHub
           </a>
-          <a href="https://github.com/abhishek-mittal/rna-method/blob/main/docs/getting-started.md" target="_blank" rel="noopener" class="btn-docs">
+          <a href="https://rna.webnco.xyz/docs/getting-started" class="btn-docs">
             Read the docs →
           </a>
         </div>

@@ -3,7 +3,7 @@ title: "Cross-Platform Guide"
 description: "Implement the RNA + Pluribus pattern across different AI editors and operating systems."
 ---
 
-**Companion to:** [RNA & Pluribus Research Paper](RNA-Pluribus-Research-Paper.md)
+**Companion to:** [RNA & Pluribus Research Paper](/research/research-paper)
 **Purpose:** Exact file paths, formats, and code samples for replicating the RNA + Pluribus pattern on Claude Code, GitHub Copilot, OpenAI Codex, VS Code, and Kimi Code.
 
 ---
@@ -542,4 +542,4 @@ For teams adopting RNA + Pluribus on a new platform:
 ---
 
 *Guide version: 1.0 - March 2026*
-*Companion: [RNA & Pluribus Research Paper](RNA-Pluribus-Research-Paper.md) | [README](README.md)*
+*Companion: [RNA & Pluribus Research Paper](/research/research-paper)*

@@ -542,4 +542,4 @@ Checkpoints are task-indexed (not agent-indexed), making them IDE-agnostic — a
 *Paper version: 1.1 — March 2026*
 
 *Changelog: v1.1 — Added §8 (Handoff Protocol & Join Pipelines), updated §6 Commands column, added §7.2 Programmatic Handoff SDK row. Reflects Shuhari Hub implementation.*
-*Companion: [Cross-Platform Implementation Guide](cross-platform-implementation-guide.md) | [README](README.md)*
+*Companion: [Cross-Platform Implementation Guide](/guides/cross-platform)*
